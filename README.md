@@ -1,3 +1,3 @@
-# Water visualization
+# Water surface visualization using OpenGL
 
-## Coursework for "Algorithms of computer graphics"
+This is the coursework for course "Algorithms of computer graphics".
