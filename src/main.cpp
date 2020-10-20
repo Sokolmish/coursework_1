@@ -4,16 +4,23 @@
 #include <iostream>
 #include <string>
 
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "../include/font.hpp"
 
 #define WINDOW_TITLE "Water visualization"
 
 #define DEFAULT_WINDOW_WIDTH 1200
 #define DEFAULT_WINDOW_HEIGHT 800
-#define MIN_WINDOW_WIDTH 1200
-#define MIN_WINDOW_HEIGHT 800
+#define MIN_WINDOW_WIDTH 800
+#define MIN_WINDOW_HEIGHT 400
 
-#define DEFAULT_SHADER_DIRECTORY "./shaders/"
+#define SHADER_DIRECTORY "./shaders/"
+#define FONT_TTF_PATH "./resources/consola.ttf" // ArialMT
 
 void key_callback(GLFWwindow*, int, int, int, int);
 void mouse_button_callback(GLFWwindow*, int, int, int);
@@ -48,8 +55,8 @@ int main() {
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetWindowSizeCallback(window, window_size_callback);
 
-    // Shaders loading
-    // Textures loading
+    Shader fontShader("./shaders/font.vert", "./shaders/font.frag");
+    Font font(FONT_TTF_PATH, 0, 36);
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -80,7 +87,17 @@ int main() {
         glClearColor(0.509f, 0.788f, 0.902f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glm::mat4 m_ortho = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+        fontShader.use();
+        fontShader.setUniform("projection", m_ortho);
+        font.RenderText(fontShader, "WatViz", 10, height - 38, 0.6, glm::vec3(0.f));
+
         // TODO
+
 
         glfwSwapBuffers(window);
     }

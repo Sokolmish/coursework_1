@@ -18,17 +18,10 @@ private:
     GLuint programId;
 
     std::string readFile(const std::string &path);
-
-    static std::map<std::string, Shader> shaderStorage;
+    
 public:
     Shader();
     Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
-    
-    static std::string shaderDirectory;
-    static Shader loadShader(const std::string &name);
-
-    static void saveShader(const std::string &name, const Shader &shader);
-    static Shader getShader(const std::string &name);
     
     void use() const;
     GLuint getProgramId() const;

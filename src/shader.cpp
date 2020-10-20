@@ -10,9 +10,6 @@
 
 #define SHADER_INFOLOG_BUFSIZE 1024
 
-std::string Shader::shaderDirectory = "./";
-std::map<std::string, Shader> Shader::shaderStorage;
-
 Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath) {
     std::string src;
     const GLchar *ptr;
@@ -121,36 +118,6 @@ inline bool checkFileExist(const std::string &name) {
     else
         return false;
 } 
-
-Shader Shader::loadShader(const std::string &name) {
-    std::string vName = shaderDirectory + name + "/vert.glsl";
-    std::string fName = shaderDirectory + name + "/frag.glsl";
-    std::string gName = shaderDirectory + name + "/geom.glsl";
-    if (!checkFileExist(vName))
-        throw std::runtime_error("Missing file: " + vName);
-    if (!checkFileExist(fName))
-        throw std::runtime_error("Missing file: " + vName);
-    bool hasGeometryShader = checkFileExist(gName);
-    Shader s;
-    if (hasGeometryShader)
-        s = Shader(vName, fName, gName);
-    else
-        s = Shader(vName, fName);
-    saveShader(name, s);
-    return s;
-}
-
-void Shader::saveShader(const std::string &name, const Shader &shader) {
-    shaderStorage.insert_or_assign(name, shader);
-}
-
-Shader Shader::getShader(const std::string &name) {
-    auto it = shaderStorage.find(name);
-    if (it == shaderStorage.end())
-        return Shader();
-    else
-        return it->second;
-}
 
 //
 
