@@ -64,7 +64,7 @@ WaterMesh::~WaterMesh() {
 }
 
 void WaterMesh::show(const glm::mat4 &m_proj_view) const {
-    for (size_t i = 0; i < width * height; i++) {
+    for (int i = 0; i < width * height; i++) {
         buff[i * 6 + 0] = (*nodes)[i].x;
         buff[i * 6 + 1] = (*nodes)[i].y;
         buff[i * 6 + 2] = (*nodes)[i].z;
