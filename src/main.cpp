@@ -64,13 +64,13 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    WaterMesh mesh(200, 200, .5f);
+    WaterMesh mesh(120, 120, 2.f);
     DebugInformer debugger;
     cam.pos.y = 1;
-    DumbPhysics phys(1.6f, 0.55f, 6.f);
+    DumbPhysics phys(3.2f, 0.98f, 3.f);
 
     glClearColor(0.539f, 0.788f, 0.89f, 1.f);
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame
     float timeFPS = timePhys;        // Used for fps counting, updates every second
@@ -177,9 +177,9 @@ inline float stepPitch(float pitch, float d) {
 }
 
 void move(GLFWwindow *window, float dt) {
-    float coeffMovement = 9.0f;
+    float coeffMovement = 11.0f;
     float coeffCameraKeyboard = 2.1f;
-    float coeffCameraMouse = 3.0f;
+    float coeffCameraMouse = 1.5f;
 
     // glm::vec3 viewDir(cosf(cam.pitch) * sinf(cam.yaw), sinf(cam.pitch), -cosf(cam.pitch) * cosf(cam.yaw));
     glm::vec3 moveDir(-sinf(cam.yaw), 0, cosf(cam.yaw));

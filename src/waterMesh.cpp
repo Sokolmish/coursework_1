@@ -64,11 +64,30 @@ WaterMesh::~WaterMesh() {
 }
 
 void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
-    for (int i = 0; i < width * height; i++) {
-        buff[i * 6 + 0] = (*nodes)[i].x;
-        buff[i * 6 + 1] = (*nodes)[i].y;
-        buff[i * 6 + 2] = (*nodes)[i].z;
-        // TODO: Normals
+    int ind = 0;
+    for (int zz = 0; zz < height; zz++) {
+        for (int xx = 0; xx < width; xx++) {
+            glm::vec3 norm(0.f);
+            glm::vec3 p0 = (*nodes)[zz * width + xx];
+            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx];
+            glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx];
+            glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)];
+            glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)];
+            if (zz != 0 && xx != 0)
+                norm += glm::cross(p_negz - p0, p_negx - p0);
+            if (zz != height - 1 && xx != 0)
+                norm += glm::cross(p_negx - p0, p_posz - p0);
+            if (zz != 0 && xx != width - 1)
+                norm += glm::cross(p_posx - p0, p_negz - p0);
+            if (zz != height - 1 && xx != width - 1)
+                norm += glm::cross(p_posz - p0, p_posx - p0);
+            norm = glm::normalize(norm);
+            
+            for (int i = 0; i < 3; i++)
+                buff[ind++] = (*nodes)[zz * width + xx][i];
+            for (int i = 0; i < 3; i++)
+                buff[ind++] = norm[i];
+        }
     }
 
     shader.use();
