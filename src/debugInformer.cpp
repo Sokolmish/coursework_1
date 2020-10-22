@@ -47,7 +47,7 @@ void DebugInformer::show(const glm::mat4 &m_ortho, float width, float height) co
 
     // Perfomance
     builder = std::stringstream();
-    builder << "fps: " << fps << " ftime: " << formatFloat("%.3f", 1.f / fps) << "ms ";
+    builder << "fps: " << fps << " ftime: " << formatFloat("%.3f", 1000.f / fps) << "us ";
     font->RenderText(shader, builder.str(), width - 280, height - 20, 0.5, glm::vec3(0.f));
 }
 

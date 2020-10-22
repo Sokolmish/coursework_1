@@ -74,13 +74,13 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
             glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)];
             glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)];
             if (zz != 0 && xx != 0)
-                norm += glm::cross(p_negz - p0, p_negx - p0);
+                norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
             if (zz != height - 1 && xx != 0)
-                norm += glm::cross(p_negx - p0, p_posz - p0);
+                norm += glm::normalize(glm::cross(p_negx - p0, p_posz - p0));
             if (zz != 0 && xx != width - 1)
-                norm += glm::cross(p_posx - p0, p_negz - p0);
+                norm += glm::normalize(glm::cross(p_posx - p0, p_negz - p0));
             if (zz != height - 1 && xx != width - 1)
-                norm += glm::cross(p_posz - p0, p_posx - p0);
+                norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
             norm = glm::normalize(norm);
             
             for (int i = 0; i < 3; i++)

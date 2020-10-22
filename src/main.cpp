@@ -64,13 +64,16 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    WaterMesh mesh(120, 120, 2.f);
+    WaterMesh mesh(120, 120, 4.f);
     DebugInformer debugger;
-    cam.pos.y = 1;
-    DumbPhysics phys(3.2f, 0.98f, 3.f);
+    DumbPhysics phys(3.2f, 0.87f, 3.1f);
+    
+    cam.pos = { 34.4, 40.09, 8.05 };
+    cam.yaw = glm::radians(326.06);
+    cam.pitch = glm::radians(-27.52);
 
     glClearColor(0.539f, 0.788f, 0.89f, 1.f);
-    // glfwSwapInterval(0);
+    glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame
     float timeFPS = timePhys;        // Used for fps counting, updates every second

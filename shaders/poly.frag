@@ -13,5 +13,5 @@ void main() {
 
     // color = vec4(0.03, 0.1, 0.93, 1);
     
-    color = vec4(vnorm.rbg, 1);
+    color = vec4(abs(vnorm.rbg), 1);
 }
