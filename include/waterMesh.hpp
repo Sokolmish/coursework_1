@@ -18,10 +18,20 @@ private:
 
     Shader shader;
 
+    friend class AbstractPhysics;
+
 public:
     WaterMesh(int w, int h, float size);
     ~WaterMesh();
-    void show(const glm::mat4 &m_proj_view) const;
+
+    void show(const glm::mat4 &m_proj_view, bool isMesh) const;
+
+    int getWidth() const;
+    int getHeight() const;
+    float getSize() const;
+
+    const std::vector<glm::vec3>& getNodes() const;
+    std::vector<glm::vec3>& getNodes();
 };
 
 #endif

@@ -14,6 +14,8 @@
 #include "../include/waterMesh.hpp"
 #include "../include/debugInformer.hpp"
 
+#include "../include/dumbPhysics.hpp"
+
 #define WINDOW_TITLE "Water visualization"
 #define DEFAULT_WINDOW_WIDTH 1200
 #define DEFAULT_WINDOW_HEIGHT 800
@@ -45,6 +47,11 @@ struct Camera {
 
 double oldmx, oldmy; // Used for looking around using mouse
 
+// States
+
+bool isMesh = false;
+bool isCursorHided = false;
+
 // Main
 
 int main() {
@@ -57,11 +64,12 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    WaterMesh mesh(10, 10, 5.f);
+    WaterMesh mesh(200, 200, .5f);
     DebugInformer debugger;
     cam.pos.y = 1;
+    DumbPhysics phys(1.6f, 0.55f, 6.f);
 
-    glClearColor(0.509f, 0.788f, 0.902f, 1.f);
+    glClearColor(0.539f, 0.788f, 0.89f, 1.f);
     glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame
@@ -90,6 +98,7 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
+        phys.process(mesh, timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.005f, 100.f) *
@@ -101,7 +110,7 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
 
-        mesh.show(m_proj_view);
+        mesh.show(m_proj_view, isMesh);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);
@@ -123,7 +132,24 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE || action == GLFW_PRESS) {
+        // TODO: menu
+    }
+    else if (key == GLFW_KEY_P || action == GLFW_PRESS) {
+        isCursorHided = !isCursorHided;
+        if (isCursorHided)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        oldmx = mx;
+        oldmy = my;
+    }
+    else if (key == GLFW_KEY_Q || action == GLFW_PRESS) {
+        isMesh = !isMesh;
+    }
 }
 
 void window_size_callback(GLFWwindow* window, int width, int height) {
@@ -187,10 +213,10 @@ void move(GLFWwindow *window, float dt) {
         cam.pos  += glm::vec3(coeffMovement * dt * leftDir);
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        cam.pos += coeffMovement * dt;
+        cam.pos.y += coeffMovement * dt;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        cam.pos  += -coeffMovement * dt;
+        cam.pos.y += -coeffMovement * dt;
     }
 
     // Mouse

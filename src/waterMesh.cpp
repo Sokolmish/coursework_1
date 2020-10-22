@@ -63,7 +63,7 @@ WaterMesh::~WaterMesh() {
     delete[] buff;
 }
 
-void WaterMesh::show(const glm::mat4 &m_proj_view) const {
+void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
     for (int i = 0; i < width * height; i++) {
         buff[i * 6 + 0] = (*nodes)[i].x;
         buff[i * 6 + 1] = (*nodes)[i].y;
@@ -76,8 +76,12 @@ void WaterMesh::show(const glm::mat4 &m_proj_view) const {
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    // glFrontFace(GL_CCW);
     glDisable(GL_BLEND);
+
+    if (isMesh)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, width * height * 6 * sizeof(GLfloat), buff);
@@ -87,4 +91,28 @@ void WaterMesh::show(const glm::mat4 &m_proj_view) const {
     // glDrawArrays(GL_TRIANGLES, 0, (width - 1) * (height - 1) * 6);
     glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+// Getters
+
+const std::vector<glm::vec3>& WaterMesh::getNodes() const {
+    return *this->nodes;
+}
+
+std::vector<glm::vec3>& WaterMesh::getNodes() {
+    return *this->nodes;
+}
+
+int WaterMesh::getWidth() const {
+    return this->width;
+}
+
+int WaterMesh::getHeight() const {
+    return this->height;
+}
+
+float WaterMesh::getSize() const {
+    return this->size;
 }
