@@ -1,6 +1,6 @@
 #include "../include/debugInformer.hpp"
 #include <sstream>
-#include <glm/gtc/matrix_transform.hpp> // Only for glm::degrees -_-
+#include <glm/gtc/matrix_transform.hpp>
 
 // Util
 
@@ -41,7 +41,7 @@ void DebugInformer::show(const glm::mat4 &m_ortho, float width, float height) co
     builder << "yaw:" << formatFloat("%.2f", glm::degrees(yaw)) << " ";
     builder << "pitch:" << formatFloat("%.2f", glm::degrees(pitch)) << " ";
     font->RenderText(shader, builder.str(), 10, height - 20, 0.5, glm::vec3(0.f));
-    
+
     // Custom text
     font->RenderText(shader, customMsg, 10, height - 40, 0.5, glm::vec3(0.f));
 

@@ -31,7 +31,6 @@ void mouse_button_callback(GLFWwindow*, int, int, int);
 void window_size_callback(GLFWwindow*, int, int);
 
 void move(GLFWwindow *window, float dt);
-std::string formatFloat(const std::string &format, float num);
 
 // Camera
 
@@ -67,7 +66,7 @@ int main() {
     WaterMesh mesh(120, 120, 4.f);
     DebugInformer debugger;
     DumbPhysics phys(3.2f, 0.87f, 3.1f);
-    
+
     cam.pos = { 34.4, 40.09, 8.05 };
     cam.yaw = glm::radians(326.06);
     cam.pitch = glm::radians(-27.52);

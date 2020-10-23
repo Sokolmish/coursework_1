@@ -7,11 +7,6 @@
 #include <iostream>
 #include <exception>
 
-struct RawChar {
-    Font::Character ch;
-    uint8_t *buff;
-};
-
 Font::Font(const std::string &path, uint32_t width, uint32_t height) {
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -26,11 +21,11 @@ Font::Font(const std::string &path, uint32_t width, uint32_t height) {
 
     std::map<uint8_t, RawChar> rawChars;
     uint8_t xi = 0, yi = 0;
-    tileWidth = 0;    
+    tileWidth = 0;
     tileHeight = 0;
     for (uint8_t ch = 0; ch < 128; ch++) {
         if (FT_Load_Char(face, ch, FT_LOAD_RENDER)) {
-            std::cout << path << ": Failed to load Glyph " << ch << std::endl;
+            std::cerr << path << ": Failed to load Glyph " << ch << std::endl;
             continue;
         }
 
@@ -55,11 +50,11 @@ Font::Font(const std::string &path, uint32_t width, uint32_t height) {
             yi++;
         }
     }
-    
+
     atlasWidth = tileWidth * 16;
     atlasHeight = tileHeight * 8;
     atlas = new uint8_t[atlasWidth * atlasHeight];
-    std::memset(atlas, 0, atlasWidth * atlasHeight); // TODO: mark as debug feature
+    std::memset(atlas, 0, atlasWidth * atlasHeight);
 
     for (const auto &ch : rawChars) {
         int ind = 0;
@@ -73,10 +68,10 @@ Font::Font(const std::string &path, uint32_t width, uint32_t height) {
         characters.insert({ ch.first, ch.second.ch });
         delete[] ch.second.buff;
     }
-    
+
     FT_Done_Face(face);
-    FT_Done_FreeType(ft); 
-    
+    FT_Done_FreeType(ft);
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -104,14 +99,14 @@ Font::~Font() {
     delete[] atlas;
 }
 
-void Font::RenderText(const Shader &s, std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color) const {
+void Font::RenderText(const Shader &s, const std::string &text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color) const {
     s.setUniform("textColor", color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glBindVertexArray(VAO);
-    
-    for (auto c = text.cbegin(); c != text.end(); c++) {
-        Font::Character ch = characters.find(*c)->second;
+
+    for (const auto &c : text) {
+        Font::Character ch = characters.find(c)->second;
 
         GLfloat xpos = x + ch.bearingX * scale;
         GLfloat ypos = y - (ch.height - ch.bearingY) * scale;
@@ -136,7 +131,7 @@ void Font::RenderText(const Shader &s, std::string text, GLfloat x, GLfloat y, G
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        x += (ch.Advance >> 6) * scale;
+        x += (ch.advance >> 6) * scale;
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);

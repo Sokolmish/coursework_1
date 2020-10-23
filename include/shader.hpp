@@ -18,14 +18,16 @@ private:
     GLuint programId;
 
     std::string readFile(const std::string &path);
-    
+
 public:
     Shader();
     Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
-    
+
     void use() const;
     GLuint getProgramId() const;
 
+    void setUniform(const std::string &name, bool val) const;
+    void setUniform(const std::string &name, GLint val) const;
     void setUniform(const std::string &name, GLfloat val) const;
     void setUniform(const std::string &name, GLfloat v1, GLfloat v2) const;
     void setUniform(const std::string &name, GLfloat v1, GLfloat v2, GLfloat v3) const;

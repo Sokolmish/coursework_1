@@ -8,7 +8,7 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     this->width = w;
     this->height = h;
     this->size = size;
-    
+
     float xoff = -size * width / 2.f;
     float zoff = -size * height / 2.f;
 
@@ -82,7 +82,7 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
             if (zz != height - 1 && xx != width - 1)
                 norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
             norm = glm::normalize(norm);
-            
+
             for (int i = 0; i < 3; i++)
                 buff[ind++] = (*nodes)[zz * width + xx][i];
             for (int i = 0; i < 3; i++)
@@ -92,6 +92,7 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
 
     shader.use();
     shader.setUniform("m_proj_view", m_proj_view);
+    shader.setUniform("is_mesh", isMesh);
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);

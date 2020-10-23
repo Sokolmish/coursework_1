@@ -15,7 +15,6 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
     const GLchar *ptr;
     GLint vSucc, fSucc, gSucc;
     GLuint vertexId, fragmentId, geometryId = 0;
-    bool hasGeometry = geometryPath.length() != 0;
     // Vertex shader
     src = readFile(vertexPath);
     ptr = src.c_str();
@@ -29,7 +28,7 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
     glShaderSource(fragmentId, 1, &ptr, nullptr);
     glCompileShader(fragmentId);
     // Geometry shader
-    if (hasGeometry) {
+    if (!geometryPath.empty()) {
         src = readFile(geometryPath);
         ptr = src.c_str();
         geometryId = glCreateShader(GL_GEOMETRY_SHADER);
@@ -39,12 +38,11 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
     // Shaders status
     glGetShaderiv(vertexId, GL_COMPILE_STATUS, &vSucc);
     glGetShaderiv(fragmentId, GL_COMPILE_STATUS, &fSucc);
-    if (hasGeometry)
+    if (!geometryPath.empty())
         glGetShaderiv(geometryId, GL_COMPILE_STATUS, &gSucc);
     else
         gSucc = true;
     if (!(vSucc && fSucc && gSucc)) {
-        // TODO: make the shaderException class
         GLchar infoLog[SHADER_INFOLOG_BUFSIZE];
         GLsizei logSize;
         if (!vSucc) {
@@ -71,14 +69,13 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
     programId = glCreateProgram();
     glAttachShader(programId, vertexId);
     glAttachShader(programId, fragmentId);
-    if (hasGeometry)
+    if (!geometryPath.empty())
         glAttachShader(programId, geometryId);
     glLinkProgram(programId);
     // Final shader status
     GLint progSucc;
     glGetProgramiv(programId, GL_LINK_STATUS, &progSucc);
     if (!progSucc) {
-        // TODO: make the shaderException class
         GLchar infoLog[SHADER_INFOLOG_BUFSIZE];
         GLsizei logSize;
         glGetProgramInfoLog(programId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
@@ -90,7 +87,7 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
 
     glDeleteShader(vertexId);
     glDeleteShader(fragmentId);
-    if (hasGeometry)
+    if (!geometryPath.empty())
         glDeleteShader(geometryId);
 
     initialized = true;
@@ -101,7 +98,6 @@ Shader::Shader() {
 }
 
 std::string Shader::readFile(const std::string &path) {
-    // TODO: check for better methods
     std::ifstream in;
     in.open(path);
     std::stringstream ss;
@@ -109,15 +105,6 @@ std::string Shader::readFile(const std::string &path) {
     in.close();
     return ss.str();
 }
-
-inline bool checkFileExist(const std::string &name) {
-    if (FILE *file = fopen(name.c_str(), "r")) {
-        fclose(file);
-        return true;
-    } 
-    else
-        return false;
-} 
 
 //
 
@@ -130,6 +117,16 @@ GLuint Shader::getProgramId() const {
 }
 
 // Uniforms
+
+void Shader::setUniform(const std::string &name, bool val) const {
+    GLuint uniformLoc = glGetUniformLocation(programId, name.c_str());
+    glUniform1i(uniformLoc, val ? 1 : 0);
+}
+
+void Shader::setUniform(const std::string &name, GLint val) const {
+    GLuint uniformLoc = glGetUniformLocation(programId, name.c_str());
+    glUniform1i(uniformLoc, val);
+}
 
 void Shader::setUniform(const std::string &name, GLfloat val) const {
     GLuint uniformLoc = glGetUniformLocation(programId, name.c_str());
