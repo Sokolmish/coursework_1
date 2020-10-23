@@ -1,7 +1,8 @@
 #include "../include/waterMesh.hpp"
+#include <cassert>
 
 WaterMesh::WaterMesh(int w, int h, float size) {
-    // TODO: assert
+    assert(w > 0 || h > 0 || size > 1e-4f);
 
     shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
 
@@ -63,7 +64,7 @@ WaterMesh::~WaterMesh() {
     delete[] buff;
 }
 
-void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
+void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     int ind = 0;
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
@@ -93,6 +94,8 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
     shader.use();
     shader.setUniform("m_proj_view", m_proj_view);
     shader.setUniform("is_mesh", isMesh);
+    shader.setUniform("eye_pos", cam.pos);
+    shader.setUniform("view_dir", cam.getViewDir());
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -108,7 +111,6 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh) const {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(vao);
-    // glDrawArrays(GL_TRIANGLES, 0, (width - 1) * (height - 1) * 6);
     glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 

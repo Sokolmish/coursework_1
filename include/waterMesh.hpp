@@ -6,6 +6,7 @@
 #include <glm/mat4x4.hpp>
 #include <vector>
 #include "shader.hpp"
+#include "camera.hpp"
 
 class WaterMesh {
 private:
@@ -24,7 +25,7 @@ public:
     WaterMesh(int w, int h, float size);
     ~WaterMesh();
 
-    void show(const glm::mat4 &m_proj_view, bool isMesh) const;
+    void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
 
     int getWidth() const;
     int getHeight() const;

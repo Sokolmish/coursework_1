@@ -10,6 +10,6 @@ out vec3 vnorm;
 
 void main() {
     gl_Position = m_proj_view * vec4(pos, 1.0);
-    vpos = vec3(m_proj_view * vec4(pos, 1.0)); // TODO: ...
+    vpos = pos;
     vnorm = norm;
 }

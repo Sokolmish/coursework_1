@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../include/font.hpp"
+#include "../include/camera.hpp"
 #include "../include/waterMesh.hpp"
 #include "../include/debugInformer.hpp"
 
@@ -32,21 +33,10 @@ void window_size_callback(GLFWwindow*, int, int);
 
 void move(GLFWwindow *window, float dt);
 
-// Camera
-
-struct Camera {
-    glm::vec3 pos;
-    float yaw, pitch, roll;
-    float zoom;
-    Camera() :
-        pos(glm::vec3(0.f)), yaw(0), pitch(0), roll(0), zoom(1.f) {}
-    Camera(const glm::vec3 &pos, float yaw, float pitch) :
-        pos(pos), yaw(yaw), pitch(pitch), roll(0), zoom(1.f) {}
-} cam;
-
-double oldmx, oldmy; // Used for looking around using mouse
-
 // States
+
+Camera cam;
+double oldmx, oldmy; // Used for looking around using mouse
 
 bool isMesh = false;
 bool isCursorHided = false;
@@ -103,7 +93,7 @@ int main() {
         phys.process(mesh, timePhys);
 
         glm::mat4 m_proj_view =
-            glm::perspective(45.f, ratio, 0.005f, 100.f) *
+            glm::perspective(45.f, ratio, 0.01f, 250.f) *
             glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
             glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
             glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *
@@ -112,7 +102,7 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
 
-        mesh.show(m_proj_view, isMesh);
+        mesh.show(m_proj_view, isMesh, cam);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);
@@ -183,9 +173,8 @@ void move(GLFWwindow *window, float dt) {
     float coeffCameraKeyboard = 2.1f;
     float coeffCameraMouse = 1.5f;
 
-    // glm::vec3 viewDir(cosf(cam.pitch) * sinf(cam.yaw), sinf(cam.pitch), -cosf(cam.pitch) * cosf(cam.yaw));
-    glm::vec3 moveDir(-sinf(cam.yaw), 0, cosf(cam.yaw));
-    glm::vec3 leftDir = glm::vec3(moveDir.z, 0, -moveDir.x);
+    glm::vec3 moveDir = cam.getMoveDir();
+    glm::vec3 leftDir = cam.getLeftDir();
 
     // View
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
