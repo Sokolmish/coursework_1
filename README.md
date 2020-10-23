@@ -11,3 +11,9 @@ This is the coursework for course "Algorithms of computer graphics".
 | `Esc` | Open menu                          |
 | `p`   | Hide/show cursor                   |
 | `q`   | Change display mode: mesh/polygons |
+
+## Screenshots
+
+### Sums of sinuses
+
+<img src="./docs/image1.png">
