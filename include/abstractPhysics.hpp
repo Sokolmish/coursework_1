@@ -5,6 +5,7 @@
 
 class AbstractPhysics {
 public:
+    virtual ~AbstractPhysics() {};
     virtual void process(WaterMesh &mesh, float t) = 0;
 };
 

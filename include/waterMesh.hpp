@@ -3,16 +3,24 @@
 
 #include "glew.hpp"
 #include "GLFW/glfw3.h"
+#include <glm/vec3.hpp>
+#include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 #include <vector>
 #include "shader.hpp"
 #include "camera.hpp"
 
 class WaterMesh {
+public:
+    struct Node {
+        int origx, origy;
+        glm::vec3 pos;
+    };
+
 private:
     int width, height;
     float size;
-    std::vector<glm::vec3> *nodes;
+    std::vector<Node> *nodes;
 
     GLuint vao, vbo, ebo;
     GLfloat *buff;
@@ -31,8 +39,8 @@ public:
     int getHeight() const;
     float getSize() const;
 
-    const std::vector<glm::vec3>& getNodes() const;
-    std::vector<glm::vec3>& getNodes();
+    const std::vector<Node>& getNodes() const;
+    std::vector<Node>& getNodes();
 };
 
 #endif

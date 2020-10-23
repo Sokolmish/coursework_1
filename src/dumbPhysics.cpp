@@ -8,9 +8,7 @@ DumbPhysics::DumbPhysics(float amp, float freq, float velocity) {
 }
 
 void DumbPhysics::process(WaterMesh &mesh, float t) {
-    for (int xx = 0; xx < mesh.getWidth(); xx++) {
-        for (int zz = 0; zz < mesh.getHeight(); zz++) {
-            mesh.getNodes()[zz * mesh.getWidth() + xx].y = amp * (sinf((xx + velocity * t) * freq) + 1.f) / 2.f;
-        }
+    for (auto &node : mesh.getNodes()) {
+        node.pos.y = amp * (sinf((node.origx + velocity * t) * freq) + 1.f) / 2.f;
     }
 }

@@ -16,6 +16,7 @@
 #include "../include/debugInformer.hpp"
 
 #include "../include/dumbPhysics.hpp"
+#include "../include/sineSumPhysics.hpp"
 
 #define WINDOW_TITLE "Water visualization"
 #define DEFAULT_WINDOW_WIDTH 1200
@@ -53,9 +54,24 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    WaterMesh mesh(120, 120, 4.f);
+    WaterMesh mesh(120, 120, 3.f);
     DebugInformer debugger;
-    DumbPhysics phys(3.2f, 0.87f, 3.1f);
+    AbstractPhysics *phys;
+
+    // phys = new DumbPhysics(3.2f, 0.87f, 3.1f);
+
+    phys = new SineSumPhysics{
+        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
+        SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
+        SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
+        // SineSumPhysics::Wave(glm::vec3{ 0.37f, 0.f, 0.24f }, 0.4f, 5.5f, 1.2f, 6.f),
+        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
+
+        // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 1.64f),
+        // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
+        // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, 0.54f }, 0.9f, 4.f, 0.5f, 0.85f),
+        // SineSumPhysics::Wave(glm::vec3{ 0.37f, 0.f, 0.24f }, 0.4f, 4.5f, 0.9f, 6.f)
+    };
 
     cam.pos = { 34.4, 40.09, 8.05 };
     cam.yaw = glm::radians(326.06);
@@ -90,7 +106,7 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        phys.process(mesh, timePhys);
+        phys->process(mesh, timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.01f, 250.f) *
@@ -113,6 +129,7 @@ int main() {
         glfwSwapBuffers(window);
     }
 
+    delete phys;
     glfwTerminate();
     return 0;
 }

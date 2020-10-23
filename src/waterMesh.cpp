@@ -13,10 +13,10 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     float xoff = -size * width / 2.f;
     float zoff = -size * height / 2.f;
 
-    nodes = new std::vector<glm::vec3>(width * height);
+    nodes = new std::vector<Node>(width * height);
     for (int zz = 0; zz < height; zz++)
         for (int xx = 0; xx < width; xx++)
-            (*nodes)[zz * width + xx] = glm::vec3(xoff + xx * size, 0.f, zoff + zz * size);
+            (*nodes)[zz * width + xx] = { xx, zz, glm::vec3(xoff + xx * size, 0.f, zoff + zz * size) };
     buff = new GLfloat[width * height * 6];
 
     GLuint *ebuff = new GLuint[(width - 1) * (height - 1) * 6];
@@ -69,11 +69,11 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
             glm::vec3 norm(0.f);
-            glm::vec3 p0 = (*nodes)[zz * width + xx];
-            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx];
-            glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx];
-            glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)];
-            glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)];
+            glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
+            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx].pos;
+            glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx].pos;
+            glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)].pos;
+            glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)].pos;
             if (zz != 0 && xx != 0)
                 norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
             if (zz != height - 1 && xx != 0)
@@ -85,7 +85,7 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
             norm = glm::normalize(norm);
 
             for (int i = 0; i < 3; i++)
-                buff[ind++] = (*nodes)[zz * width + xx][i];
+                buff[ind++] = (*nodes)[zz * width + xx].pos[i];
             for (int i = 0; i < 3; i++)
                 buff[ind++] = norm[i];
         }
@@ -119,11 +119,11 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
 
 // Getters
 
-const std::vector<glm::vec3>& WaterMesh::getNodes() const {
+const std::vector<WaterMesh::Node>& WaterMesh::getNodes() const {
     return *this->nodes;
 }
 
-std::vector<glm::vec3>& WaterMesh::getNodes() {
+std::vector<WaterMesh::Node>& WaterMesh::getNodes() {
     return *this->nodes;
 }
 
