@@ -5,6 +5,7 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     assert(w > 0 || h > 0 || size > 1e-4f);
 
     shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
+    normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
 
     this->width = w;
     this->height = h;
@@ -14,9 +15,15 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     float zoff = -size * height / 2.f;
 
     nodes = new std::vector<Node>(width * height);
-    for (int zz = 0; zz < height; zz++)
-        for (int xx = 0; xx < width; xx++)
-            (*nodes)[zz * width + xx] = { xx, zz, glm::vec3(xoff + xx * size, 0.f, zoff + zz * size) };
+    for (int zz = 0; zz < height; zz++) {
+        for (int xx = 0; xx < width; xx++) {
+            (*nodes)[zz * width + xx] = {
+                xx, zz,                                             // Orig indices
+                glm::vec3(xoff + xx * size, 0.f, zoff + zz * size), // Current pos
+                glm::vec3(0.f, 1.f, 0.f)                            // Normal
+            };
+        }
+    }
     buff = new GLfloat[width * height * 6];
 
     GLuint *ebuff = new GLuint[(width - 1) * (height - 1) * 6];
@@ -84,8 +91,11 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
                 norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
             norm = glm::normalize(norm);
 
+            // glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
+            // glm::vec3 norm = (*nodes)[zz * width + xx].norm;
+
             for (int i = 0; i < 3; i++)
-                buff[ind++] = (*nodes)[zz * width + xx].pos[i];
+                buff[ind++] = p0[i];
             for (int i = 0; i < 3; i++)
                 buff[ind++] = norm[i];
         }
@@ -112,6 +122,11 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
+
+    // normShader.use();
+    // normShader.setUniform("m_proj_view", m_proj_view);
+    // glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
+
     glBindVertexArray(0);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

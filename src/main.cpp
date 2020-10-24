@@ -41,6 +41,7 @@ double oldmx, oldmy; // Used for looking around using mouse
 
 bool isMesh = false;
 bool isCursorHided = false;
+bool isFreeze = true;
 
 // Main
 
@@ -106,7 +107,8 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        phys->process(mesh, timePhys);
+        if (!isFreeze)
+            phys->process(mesh, timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.01f, 250.f) *
@@ -159,6 +161,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     else if (key == GLFW_KEY_Q || action == GLFW_PRESS) {
         isMesh = !isMesh;
     }
+    else if (key == GLFW_KEY_Z || action == GLFW_PRESS) {
+        isFreeze = !isFreeze;
+    }
 }
 
 void window_size_callback(GLFWwindow* window, int width, int height) {
@@ -186,7 +191,7 @@ inline float stepPitch(float pitch, float d) {
 }
 
 void move(GLFWwindow *window, float dt) {
-    float coeffMovement = 11.0f;
+    float coeffMovement = 16.0f;
     float coeffCameraKeyboard = 2.1f;
     float coeffCameraMouse = 1.5f;
 

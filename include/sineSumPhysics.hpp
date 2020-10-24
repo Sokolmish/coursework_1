@@ -4,6 +4,7 @@
 #include "abstractPhysics.hpp"
 #include <vector>
 #include <initializer_list>
+#include <glm/vec3.hpp>
 
 class SineSumPhysics : public AbstractPhysics {
 public:

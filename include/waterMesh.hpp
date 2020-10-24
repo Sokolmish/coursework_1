@@ -14,7 +14,7 @@ class WaterMesh {
 public:
     struct Node {
         int origx, origy;
-        glm::vec3 pos;
+        glm::vec3 pos, norm;
     };
 
 private:
@@ -25,7 +25,7 @@ private:
     GLuint vao, vbo, ebo;
     GLfloat *buff;
 
-    Shader shader;
+    Shader shader, normShader;
 
     friend class AbstractPhysics;
 
