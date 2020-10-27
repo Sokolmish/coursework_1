@@ -12,6 +12,7 @@ This is the coursework for course "Algorithms of computer graphics".
 | `p`   | Hide/show cursor                   |
 | `q`   | Change display mode: mesh/polygons |
 | `z`   | Freeze geometry                    |
+| `i`   | Take screenshot                    |
 
 ## Screenshots
 
