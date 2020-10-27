@@ -18,6 +18,9 @@
 #include "../include/dumbPhysics.hpp"
 #include "../include/sineSumPhysics.hpp"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../include/stb_image_write.hpp"
+
 #define WINDOW_TITLE "Water visualization"
 #define DEFAULT_WINDOW_WIDTH 1200
 #define DEFAULT_WINDOW_HEIGHT 800
@@ -33,6 +36,8 @@ void mouse_button_callback(GLFWwindow*, int, int, int);
 void window_size_callback(GLFWwindow*, int, int);
 
 void move(GLFWwindow *window, float dt);
+
+void takeScreenshot(GLFWwindow *window, const std::string &path);
 
 // States
 
@@ -138,15 +143,15 @@ int main() {
 
 // Window events
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
 
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE || action == GLFW_PRESS) {
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         // TODO: menu
     }
-    else if (key == GLFW_KEY_P || action == GLFW_PRESS) {
+    else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
         isCursorHided = !isCursorHided;
         if (isCursorHided)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -158,15 +163,21 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         oldmx = mx;
         oldmy = my;
     }
-    else if (key == GLFW_KEY_Q || action == GLFW_PRESS) {
+    else if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         isMesh = !isMesh;
     }
-    else if (key == GLFW_KEY_Z || action == GLFW_PRESS) {
+    else if (key == GLFW_KEY_Z && action == GLFW_PRESS) {
         isFreeze = !isFreeze;
+    }
+    else if (key == GLFW_KEY_I && action == GLFW_PRESS) {
+        std::string path = "./screenshots/screenshot.png";
+        std::cout << "Taking screenshot..." << std::endl;
+        takeScreenshot(window, path);
+        std::cout << "Screenshot saved in " << path << std::endl;
     }
 }
 
-void window_size_callback(GLFWwindow* window, int width, int height) {
+void window_size_callback(GLFWwindow *window, int width, int height) {
 
 }
 
@@ -275,4 +286,22 @@ bool initGraphics(GLFWwindow *&window) {
     glfwSetWindowSizeCallback(window, window_size_callback);
 
     return true;
+}
+
+// Misc
+
+void takeScreenshot(GLFWwindow *window, const std::string &path) {
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    GLubyte *buff = new GLubyte[width * height * 3l];
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buff);
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+    stbi_flip_vertically_on_write(true);
+    // int ret = stbi_write_bmp(path.c_str(), width, height, 3, buff);
+    int ret = stbi_write_png(path.c_str(), width, height, 3, buff, width * 3);
+    if (ret == 0)
+        std::cerr << "Something went wrong!" << std::endl;
+    delete[] buff;
 }
