@@ -10,7 +10,7 @@ private:
     float velocity;
 public:
     DumbPhysics(float amp, float freq, float velocity);
-    void process(WaterMesh &mesh, float t) override;
+    void process(WaterMeshChunk &mesh, float t) override;
 };
 
 #endif

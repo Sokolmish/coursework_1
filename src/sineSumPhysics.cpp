@@ -20,7 +20,7 @@ void SineSumPhysics::addWave(const glm::vec3 &dir, float amp, float freq, float 
     waves.push_back(Wave(dir, amp, freq, velocity, stepness));
 }
 
-void SineSumPhysics::process(WaterMesh &mesh, float t) {
+void SineSumPhysics::process(WaterMeshChunk &mesh, float t) {
     for (auto &node : mesh.getNodes()) {
         // glm::vec3 norm(0.f);
         // float dx = 0;

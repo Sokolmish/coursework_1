@@ -12,8 +12,8 @@
 
 #include "../include/font.hpp"
 #include "../include/camera.hpp"
-#include "../include/waterMesh.hpp"
 #include "../include/debugInformer.hpp"
+#include "../include/waterMeshChunk.hpp"
 
 #include "../include/dumbPhysics.hpp"
 #include "../include/sineSumPhysics.hpp"
@@ -55,7 +55,8 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    WaterMesh mesh(120, 120, 3.f);
+    // WaterMeshChunk mesh(121, 121, 3.f);
+    WaterMeshChunk mesh(61, 61, 3.f, WaterMeshChunk::OUTER);
     DebugInformer debugger;
     AbstractPhysics *phys;
 
@@ -192,7 +193,7 @@ inline float stepPitch(float pitch, float d) {
 
 void move(GLFWwindow *window, float dt) {
     float coeffMovement = 16.0f;
-    float coeffCameraKeyboard = 2.1f;
+    float coeffCameraKeyboard = 1.4f;
     float coeffCameraMouse = 1.5f;
 
     glm::vec3 moveDir = cam.getMoveDir();

@@ -25,7 +25,7 @@ public:
 
     void addWave(const glm::vec3 &dir, float amp, float freq, float velocity, float stepness);
 
-    void process(WaterMesh &mesh, float t) override;
+    void process(WaterMeshChunk &mesh, float t) override;
 };
 
 #endif

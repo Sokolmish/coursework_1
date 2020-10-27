@@ -1,12 +1,12 @@
 #ifndef __ABSTRACT_PHYSICS_H__
 #define __ABSTRACT_PHYSICS_H__
 
-#include "waterMesh.hpp"
+#include "waterMeshChunk.hpp"
 
 class AbstractPhysics {
 public:
     virtual ~AbstractPhysics() {};
-    virtual void process(WaterMesh &mesh, float t) = 0;
+    virtual void process(WaterMeshChunk &mesh, float t) = 0;
 };
 
 #endif

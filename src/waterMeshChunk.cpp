@@ -1,8 +1,74 @@
-#include "../include/waterMesh.hpp"
+#include "../include/waterMeshChunk.hpp"
 #include <cassert>
 
-WaterMesh::WaterMesh(int w, int h, float size) {
+template<class T>
+inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
+    dst.push_back(p1);
+    dst.push_back(p2);
+    dst.push_back(p3);
+}
+
+std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
+    std::vector<std::pair<int, int> > tElements;
+
+    if (meshType & EDGE_NZ) {
+        for (int i = 0; i < width - 2; i += 2) {
+            push_tr(tElements, { i, 0 }, { i + 2, 0 }, { i + 1, 1 });
+            if (i != 0 || !(meshType & EDGE_NX))
+                push_tr(tElements, { i, 0 }, { i + 1, 1 }, { i, 1 });
+            if (i != width - 3 || !(meshType & EDGE_PX))
+                push_tr(tElements, { i + 1, 1 }, { i + 2, 0 }, { i + 2, 1 });
+        }
+    }
+
+    if (meshType & EDGE_PZ) {
+        for (int i = 0; i < width - 2; i += 2) {
+            push_tr(tElements, { i, height - 1 }, { i + 1, height - 2 }, { i + 2, height - 1 });
+            if (i != 0 || !(meshType & EDGE_NX))
+                push_tr(tElements, { i, height - 1 }, { i, height - 2 }, { i + 1, height - 2 });
+            if (i != width - 3 || !(meshType & EDGE_PX))
+                push_tr(tElements, { i + 1, height - 2 }, { i + 2, height - 2 }, { i + 2, height - 1 });
+        }
+    }
+
+    if (meshType & EDGE_NX) {
+        for (int i = 0; i < height - 2; i += 2) {
+            push_tr(tElements, { 0, i }, { 1, i + 1}, { 0, i + 2});
+            if (i != 0 || !(meshType & EDGE_NZ))
+                push_tr(tElements, { 0, i }, { 1, i }, { 1, i + 1});
+            if (i != height - 3 || !(meshType & EDGE_PZ))
+                push_tr(tElements, { 1, i + 1 }, { 1, i + 2 }, { 0, i + 2});
+        }
+    }
+
+    if (meshType & EDGE_PX) {
+        for (int i = 0; i < height - 2; i += 2) {
+            push_tr(tElements, { width - 1, i }, { width - 1, i + 2}, { width - 2, i + 1});
+            if (i != 0 || !(meshType & EDGE_NZ))
+                push_tr(tElements, { width - 1, i }, { width - 2, i + 1}, { width - 2, i });
+            if (i != height - 3 || !(meshType & EDGE_PZ))
+                push_tr(tElements, { width - 2, i + 1 }, { width - 1, i + 2}, { width - 2, i + 2 });
+        }
+    }
+
+    int startx = (meshType & EDGE_NX) ? 1 : 0;
+    int startz = (meshType & EDGE_NZ) ? 1 : 0;
+    int stopx = (meshType & EDGE_PX) ? width - 2 : width - 1;
+    int stopz = (meshType & EDGE_PZ) ? height - 2 : height - 1;
+
+    for (int zz = startz; zz < stopz; zz++) {
+        for (int xx = startx; xx < stopx; xx++) {
+            push_tr(tElements, { xx, zz }, { xx + 1, zz }, { xx + 1, zz + 1 });
+            push_tr(tElements, { xx, zz }, { xx + 1, zz + 1 }, { xx, zz + 1 });
+        }
+    }
+
+    return tElements;
+}
+
+WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type) {
     assert(w > 0 || h > 0 || size > 1e-4f);
+    assert(w % 2 == 1 || h % 2 == 1);
 
     shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
     normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
@@ -10,11 +76,24 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     this->width = w;
     this->height = h;
     this->size = size;
+    this->meshType = type;
 
     float xoff = -size * width / 2.f;
     float zoff = -size * height / 2.f;
 
+    auto tElements = getElements();
+    elementsCount = tElements.size() * 2;
+    GLuint *ebuff = new GLuint[elementsCount];
+    size_t ind = 0;
+    for (const auto &e : tElements) {
+        int x = e.first;
+        int z = e.second;
+        ebuff[ind++] = z * width + x;
+    }
+
     nodes = new std::vector<Node>(width * height);
+    buff = new GLfloat[width * height * 6];
+
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
             (*nodes)[zz * width + xx] = {
@@ -22,24 +101,6 @@ WaterMesh::WaterMesh(int w, int h, float size) {
                 glm::vec3(xoff + xx * size, 0.f, zoff + zz * size), // Current pos
                 glm::vec3(0.f, 1.f, 0.f)                            // Normal
             };
-        }
-    }
-    buff = new GLfloat[width * height * 6];
-
-    GLuint *ebuff = new GLuint[(width - 1) * (height - 1) * 6];
-    size_t ind = 0;
-    for (int zz = 0; zz < height - 1; zz++) {
-        for (int xx = 0; xx < width - 1; xx++) {
-            GLuint p1 = zz * width + xx;
-            GLuint p2 = zz * width + xx + 1;
-            GLuint p3 = (zz + 1) * width + xx;
-            GLuint p4 = (zz + 1) * width + xx + 1;
-            ebuff[ind++] = p1;
-            ebuff[ind++] = p2;
-            ebuff[ind++] = p3;
-            ebuff[ind++] = p3;
-            ebuff[ind++] = p2;
-            ebuff[ind++] = p4;
         }
     }
 
@@ -66,12 +127,12 @@ WaterMesh::WaterMesh(int w, int h, float size) {
     delete[] ebuff;
 }
 
-WaterMesh::~WaterMesh() {
+WaterMeshChunk::~WaterMeshChunk() {
     delete nodes;
     delete[] buff;
 }
 
-void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
+void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     int ind = 0;
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
@@ -121,7 +182,7 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
 
     // normShader.use();
     // normShader.setUniform("m_proj_view", m_proj_view);
@@ -134,22 +195,26 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
 
 // Getters
 
-const std::vector<WaterMesh::Node>& WaterMesh::getNodes() const {
+const std::vector<WaterMeshChunk::Node>& WaterMeshChunk::getNodes() const {
     return *this->nodes;
 }
 
-std::vector<WaterMesh::Node>& WaterMesh::getNodes() {
+std::vector<WaterMeshChunk::Node>& WaterMeshChunk::getNodes() {
     return *this->nodes;
 }
 
-int WaterMesh::getWidth() const {
+int WaterMeshChunk::getWidth() const {
     return this->width;
 }
 
-int WaterMesh::getHeight() const {
+int WaterMeshChunk::getHeight() const {
     return this->height;
 }
 
-float WaterMesh::getSize() const {
+float WaterMeshChunk::getSize() const {
     return this->size;
+}
+
+int WaterMeshChunk::getMeshType() const {
+    return this->meshType;
 }
