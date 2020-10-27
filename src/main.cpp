@@ -1,25 +1,20 @@
-#include "../include/glew.hpp"
+#include "../include/util/glew.hpp"
 #include "GLFW/glfw3.h"
 
-#include <iostream>
-#include <string>
+#include "../include/util/utility.hpp"
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "../include/util/camera.hpp"
+#include "../include/util/font.hpp"
+#include "../include/util/image.hpp"
 
-#include "../include/font.hpp"
-#include "../include/camera.hpp"
 #include "../include/waterMesh.hpp"
 #include "../include/debugInformer.hpp"
 
 #include "../include/dumbPhysics.hpp"
 #include "../include/sineSumPhysics.hpp"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../include/stb_image_write.hpp"
+#include <iostream>
+#include <string>
 
 #define WINDOW_TITLE "Water visualization"
 #define DEFAULT_WINDOW_WIDTH 1200
@@ -183,24 +178,6 @@ void window_size_callback(GLFWwindow *window, int width, int height) {
 
 // Movement
 
-inline float stepYaw(float yaw, float d) {
-    yaw = fmodf(yaw - d, 2 * M_PI);
-    if (yaw < 0)
-        return 2 * M_PI + yaw;
-    else
-        return yaw;
-}
-
-inline float stepPitch(float pitch, float d) {
-    pitch -= d;
-    if (pitch > M_PI_2)
-        return M_PI_2;
-    else if (pitch < -M_PI_2)
-        return -M_PI_2;
-    else
-        return pitch;
-}
-
 void move(GLFWwindow *window, float dt) {
     float coeffMovement = 16.0f;
     float coeffCameraKeyboard = 2.1f;
@@ -294,14 +271,14 @@ void takeScreenshot(GLFWwindow *window, const std::string &path) {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     GLubyte *buff = new GLubyte[width * height * 3l];
+    
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buff);
     glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
-    stbi_flip_vertically_on_write(true);
-    // int ret = stbi_write_bmp(path.c_str(), width, height, 3, buff);
-    int ret = stbi_write_png(path.c_str(), width, height, 3, buff, width * 3);
+    int ret = ImageRGB::useArray(buff, width, height).writePNG(path);
     if (ret == 0)
         std::cerr << "Something went wrong!" << std::endl;
+
     delete[] buff;
 }

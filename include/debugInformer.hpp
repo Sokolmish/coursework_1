@@ -1,11 +1,9 @@
 #ifndef __DEBUG_INFORMER__
 #define __DEBUG_INFORMER__
 
-#include "glew.hpp"
-#include "GLFW/glfw3.h"
-#include <glm/mat4x4.hpp>
-#include "shader.hpp"
-#include "font.hpp"
+#include "util/utility.hpp"
+#include "util/shader.hpp"
+#include "util/font.hpp"
 
 class DebugInformer {
 private:

@@ -1,4 +1,4 @@
-#include "../include/font.hpp"
+#include "../../include/util/font.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

@@ -1,14 +1,14 @@
 #ifndef __WATER_MESH_H__
 #define __WATER_MESH_H__
 
-#include "glew.hpp"
+#include "util/glew.hpp"
 #include "GLFW/glfw3.h"
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 #include <vector>
-#include "shader.hpp"
-#include "camera.hpp"
+#include "util/shader.hpp"
+#include "util/camera.hpp"
 
 class WaterMesh {
 public:
