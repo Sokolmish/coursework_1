@@ -3,18 +3,21 @@
 
 #include "waterMeshChunk.hpp"
 #include "abstractPhysics.hpp"
-#include <vector>
+#include <map>
 
 class WaterMesh {
 private:
-    std::vector<WaterMeshChunk*> chunks;
+    std::map<std::pair<int, int>, WaterMeshChunk*> chunks;
+
+    friend class WaterMeshChunk;
+
 public:
     WaterMesh();
     ~WaterMesh();
 
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
-    
     void process(AbstractPhysics *phys, float t);
+    const WaterMeshChunk* getChunk(int x, int z) const;
 };
 
 #endif

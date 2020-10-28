@@ -10,6 +10,8 @@
 #include "util/shader.hpp"
 #include "util/camera.hpp"
 
+class WaterMesh;
+
 class WaterMeshChunk {
 public:
     enum MeshType {
@@ -18,15 +20,21 @@ public:
         EDGE_PX = 2,
         EDGE_NZ = 4,
         EDGE_PZ = 8,
-        OUTER = 15 // EDGE_NX | EDGE_PX | EDGE_NZ | EDGE_PZ
+        CORN_NXNZ = EDGE_NX | EDGE_NZ,
+        CORN_PXNZ = EDGE_PX | EDGE_NZ,
+        CORN_NXPZ = EDGE_NX | EDGE_PZ,
+        CORN_PXPZ = EDGE_PX | EDGE_PZ,
+        OUTER = EDGE_NX | EDGE_PX | EDGE_NZ | EDGE_PZ,
     };
 
     struct Node {
-        int origx, origy;
+        float origx, origy;
         glm::vec3 pos, norm;
     };
 
 private:
+    int posx, posz;
+
     int width, height;
     float size;
     std::vector<Node> *nodes;
@@ -41,8 +49,11 @@ private:
 
     std::vector<std::pair<int, int> > getElements() const;
 
+    friend class WaterMesh;
+    WaterMesh *parent;
+
 public:
-    WaterMeshChunk(int w, int h, float size, int type, const glm::vec3 &offset);
+    WaterMeshChunk(int wh, float size, int type, int xs, int ys);
     ~WaterMeshChunk();
 
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
@@ -51,11 +62,13 @@ public:
     int getHeight() const;
     float getSize() const;
     glm::vec3 getOffset() const;
+    int getMeshType() const;
+    std::pair<int, int> getChunkPos() const;
+
+    Node getNode(int xx, int zz) const;
 
     const std::vector<Node>& getNodes() const;
     std::vector<Node>& getNodes();
-
-    int getMeshType() const;
 };
 
 #endif

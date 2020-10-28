@@ -1,57 +1,61 @@
 #include "../include/waterMesh.hpp"
 
+inline void ins_mc(std::map<std::pair<int, int>, WaterMeshChunk*> &dst, WaterMeshChunk *val) {
+    dst.insert({val->getChunkPos(), val});
+}
+
 WaterMesh::WaterMesh() {
-    chunks = std::vector<WaterMeshChunk*>();
+    chunks = std::map<std::pair<int, int>, WaterMeshChunk*>();
 
-    int chDis = 61;
-    float chBaseSize = 3.f;
-    float chSize = (chDis - 1) * chBaseSize;
+    int chDis = 64;
+    float chBaseSize = 3.5f;
 
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::INNER, { 0, 0, 0 }));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::INNER, 0, 0));
 
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_PX, { 1 * chSize, 0, 0 }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_NX, { -1 * chSize, 0, 0 }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_PZ, { 0, 0, 1 * chSize }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_NZ, { 0, 0, -1 * chSize }));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::EDGE_PX, 1, 0));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::EDGE_NX, -1, 0));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::EDGE_PZ, 0, 1));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::EDGE_NZ, 0, -1));
 
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_PX | WaterMeshChunk::EDGE_PZ,
-            { 1 * chSize, 0, 1 * chSize }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_PX | WaterMeshChunk::EDGE_NZ,
-            { 1 * chSize, 0, -1 * chSize }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_NX | WaterMeshChunk::EDGE_PZ,
-            { -1 * chSize, 0, 1 * chSize }));
-    chunks.push_back(
-        new WaterMeshChunk(chDis, chDis, chBaseSize, WaterMeshChunk::EDGE_NX | WaterMeshChunk::EDGE_NZ,
-            { -1 * chSize, 0, -1 * chSize }));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::CORN_PXPZ, 1, 1));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::CORN_PXNZ, 1, -1));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::CORN_NXPZ, -1, 1));
+    ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::CORN_NXNZ, -1, -1));
 
-
-    for (int i = -1; i <= 1; i++) {
-        chunks.push_back(new WaterMeshChunk(31, 31, chBaseSize * 2, WaterMeshChunk::INNER, { 2 * chSize, 0.f, i * chSize }));
-        chunks.push_back(new WaterMeshChunk(31, 31, chBaseSize * 2, WaterMeshChunk::INNER, { -2 * chSize, 0.f, i * chSize }));
-        chunks.push_back(new WaterMeshChunk(31, 31, chBaseSize * 2, WaterMeshChunk::INNER, { i * chSize, 0.f, 2 * chSize }));
-        chunks.push_back(new WaterMeshChunk(31, 31, chBaseSize * 2, WaterMeshChunk::INNER, { i * chSize, 0.f, -2 * chSize }));
+    chDis /= 2;
+    chBaseSize *= 2;
+    for (int i = -2; i <= 2; i++) {
+        ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::INNER, 2, i));
+        ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::INNER, -2, i));
     }
+    for (int i = -1; i <= 1; i++) {
+        ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::INNER, i, 2));
+        ins_mc(chunks, new WaterMeshChunk(chDis, chBaseSize, WaterMeshChunk::INNER, i, -2));
+    }
+
+    for (auto &e : chunks)
+        e.second->parent = this;
 }
 
 void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     for (auto e : chunks)
-        e->show(m_proj_view, isMesh, cam);
+        e.second->show(m_proj_view, isMesh, cam);
 }
 
 void WaterMesh::process(AbstractPhysics *phys, float t) {
     for (auto e : chunks)
-        phys->process(*e, t);
+        phys->process(*e.second, t);
 }
 
 WaterMesh::~WaterMesh() {
     for (auto e : chunks)
-        delete e;
+        delete e.second;
+}
+
+const WaterMeshChunk* WaterMesh::getChunk(int x, int z) const {
+    auto it = chunks.find(std::pair<int, int>(x, z));
+    if (it == chunks.end())
+        return nullptr;
+    else
+        return it->second;
 }

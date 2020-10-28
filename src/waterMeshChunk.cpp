@@ -1,4 +1,5 @@
 #include "../include/waterMeshChunk.hpp"
+#include "../include/waterMesh.hpp"
 #include <cassert>
 #include <math.h>
 #include <iostream>
@@ -68,23 +69,20 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
     return tElements;
 }
 
-WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::vec3 &offset) {
-    assert(w > 0 || h > 0 || size > 1e-4f);
+WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
+    assert(wh > 0 && size > 1e-4f);
 
-    if (w % 2 == 0 || h % 2 == 0) {
-        std::cerr << "Width and height of the mesh chunk must be odd!" << std::endl;
-        w = (w % 2 == 0) ? 1 : 0;
-        h = (h % 2 == 0) ? 1 : 0;
-    }
+    offset = glm::vec3(xs * wh * size, 0.f, ys * wh * size);
 
-    shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
-    normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
+    // Warning?
+    wh += (wh % 2 == 0) ? 1 : 0;
 
-    this->width = w;
-    this->height = h;
+    posx = xs;
+    posz = ys;
+    width = wh;
+    height = wh;
     this->size = size;
     this->meshType = type;
-    this->offset = offset;
 
     auto tElements = getElements();
     elementsCount = tElements.size();
@@ -102,9 +100,9 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::ve
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
             (*nodes)[zz * width + xx] = {
-                xx, zz,                               // Orig indices
-                glm::vec3(xx * size, 0.f, zz * size), // Current pos
-                glm::vec3(0.f, 1.f, 0.f)              // Normal
+                xx * size + offset.x, zz * size + offset.z,                     // Orig indices
+                glm::vec3(xx * size + offset.x, 0.f, zz * size + offset.z),     // Current pos
+                glm::vec3(0.f, 1.f, 0.f)                                        // Normal
             };
         }
     }
@@ -116,7 +114,7 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::ve
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-    glBufferData(GL_ARRAY_BUFFER, w * h * 6 * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, width * height * 6 * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
     size_t stride = 6 * sizeof(GLfloat);
     glEnableVertexAttribArray(0); // Location
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(0 * sizeof(GLfloat)));
@@ -130,35 +128,93 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::ve
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     delete[] ebuff;
+
+    shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
+    normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
 }
 
 void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     int ind = 0;
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
+            auto neigh_nx = parent->getChunk(posx - 1, posz);
+            auto neigh_px = parent->getChunk(posx + 1, posz);
+            auto neigh_nz = parent->getChunk(posx, posz - 1);
+            auto neigh_pz = parent->getChunk(posx, posz + 1);
+
             glm::vec3 norm(0.f);
             glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
-            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx].pos;
+
+            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx].pos; // TODO: bounds
             glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx].pos;
             glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)].pos;
             glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)].pos;
-            // Here we must add offset to each point
-            // But for normals calculation it's doesn't matter
-            if (zz != 0 && xx != 0)
-                norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
-            if (zz != height - 1 && xx != 0)
-                norm += glm::normalize(glm::cross(p_negx - p0, p_posz - p0));
-            if (zz != 0 && xx != width - 1)
-                norm += glm::normalize(glm::cross(p_posx - p0, p_negz - p0));
-            if (zz != height - 1 && xx != width - 1)
-                norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
+
+            if (xx == 0) {
+                if (neigh_nx != nullptr) {
+                    if (meshType & EDGE_NX)
+                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz / 2).pos;
+                    else if (neigh_nx->getMeshType() & EDGE_PX)
+                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz * 2).pos;
+                    else
+                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz).pos;
+                }
+                else {
+                    p_negx = p0 - glm::vec3(1.f, 0.f, 0.f);
+                }
+            }
+
+            if (xx == width - 1) {
+                if (neigh_px != nullptr) {
+                    if (meshType & EDGE_PX)
+                        p_posx = neigh_px->getNode(1, zz / 2).pos;
+                    else if (neigh_px->getMeshType() & EDGE_NX)
+                        p_posx = neigh_px->getNode(1, zz * 2).pos;
+                    else
+                        p_posx = neigh_px->getNode(1, zz).pos;
+                }
+                else {
+                    p_posx = p0 - glm::vec3(-1.f, 0.f, 0.f);
+                }
+            }
+
+            if (zz == 0) {
+                if (neigh_nz != nullptr) {
+                    if (meshType & EDGE_NZ)
+                        p_negz = neigh_nz->getNode(xx / 2, neigh_nz->height - 2).pos;
+                    else if (neigh_nz->getMeshType() & EDGE_PZ)
+                        p_negz = neigh_nz->getNode(xx * 2, neigh_nz->height - 2).pos;
+                    else
+                        p_negz = neigh_nz->getNode(xx, neigh_nz->height - 2).pos;
+                }
+                else {
+                    p_negz = p0 - glm::vec3(0.f, 0.f, 1.f);
+                }
+            }
+
+            if (zz == height - 1) {
+                if (neigh_pz != nullptr) {
+                    if (meshType & EDGE_PZ)
+                        p_posz = neigh_pz->getNode(xx / 2, 1).pos;
+                    else if (neigh_pz->getMeshType() & EDGE_NZ)
+                        p_posz = neigh_pz->getNode(xx * 2, 1).pos;
+                    else
+                        p_posz = neigh_pz->getNode(xx, 1).pos;  
+                }
+                else {
+                    p_posz = p0 - glm::vec3(0.f, 0.f, -1.f);
+                }
+            }
+
+            norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
+            norm += glm::normalize(glm::cross(p_posx - p0, p_negz - p0));
+            norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
             norm = glm::normalize(norm);
 
-            // glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
             // glm::vec3 norm = (*nodes)[zz * width + xx].norm;
 
             for (int i = 0; i < 3; i++)
-                buff[ind++] = p0[i] + offset[i];
+                buff[ind++] = p0[i];
             for (int i = 0; i < 3; i++)
                 buff[ind++] = norm[i];
         }
@@ -169,7 +225,7 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     shader.setUniform("is_mesh", isMesh);
     if (isMesh)
         shader.setUniform("mesh_color", 0.1, 0.1, 0.1); // 0.03, 0.1, 0.95
-    
+
     shader.setUniform("m_proj_view", m_proj_view);
     shader.setUniform("eye_pos", cam.pos);
     shader.setUniform("view_dir", cam.getViewDir());
@@ -210,6 +266,10 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 
 // Getters
 
+WaterMeshChunk::Node WaterMeshChunk::getNode(int xx, int zz) const {
+    return (*nodes)[zz * width + xx];
+}
+
 const std::vector<WaterMeshChunk::Node>& WaterMeshChunk::getNodes() const {
     return *this->nodes;
 }
@@ -236,6 +296,10 @@ int WaterMeshChunk::getMeshType() const {
 
 glm::vec3 WaterMeshChunk::getOffset() const {
     return offset;
+}
+
+std::pair<int, int> WaterMeshChunk::getChunkPos() const {
+    return std::pair<int, int>(posx, posz);
 }
 
 WaterMeshChunk::~WaterMeshChunk() {

@@ -22,7 +22,7 @@
 
 // Config
 
-static constexpr float coeffMovement = 16.0f;
+static constexpr float coeffMovement = 19.0f;
 static constexpr float coeffCameraKeyboard = 1.4f;
 static constexpr float coeffCameraMouse = 1.5f;
 
@@ -66,10 +66,10 @@ int main() {
     AbstractPhysics *phys;
 
     phys = new SineSumPhysics{
-        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 4.17f),
-        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      1.28f, 0.98f, 0.97f, 8.47f),
-        SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   2.21f, 0.91f, 0.12f, 7.92f),
-        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 5.17f),
+        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
+        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
+        SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
+        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
 
         // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
         // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
