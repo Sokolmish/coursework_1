@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 uniform bool is_mesh;
 uniform vec3 mesh_color;

@@ -17,8 +17,6 @@ private:
     bool initialized = false;
     GLuint programId;
 
-    std::string readFile(const std::string &path);
-
 public:
     Shader();
     Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");

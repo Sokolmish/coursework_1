@@ -10,6 +10,15 @@
 
 #define SHADER_INFOLOG_BUFSIZE 1024
 
+static std::string readFile(const std::string &path) {
+    std::ifstream in;
+    in.open(path);
+    std::stringstream ss;
+    ss << in.rdbuf();
+    in.close();
+    return ss.str();
+}
+
 Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath) {
     std::string src;
     const GLchar *ptr;
@@ -95,15 +104,6 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, c
 
 Shader::Shader() {
     initialized = false;
-}
-
-std::string Shader::readFile(const std::string &path) {
-    std::ifstream in;
-    in.open(path);
-    std::stringstream ss;
-    ss << in.rdbuf();
-    in.close();
-    return ss.str();
 }
 
 //

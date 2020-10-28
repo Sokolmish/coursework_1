@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 uniform mat4 projection;
 layout (location = 0) in vec4 vertex;

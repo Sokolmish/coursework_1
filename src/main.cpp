@@ -2,7 +2,6 @@
 #include "GLFW/glfw3.h"
 
 #include "../include/util/utility.hpp"
-
 #include "../include/util/camera.hpp"
 #include "../include/util/font.hpp"
 #include "../include/util/image.hpp"
@@ -10,7 +9,6 @@
 #include "../include/debugInformer.hpp"
 #include "../include/waterMesh.hpp"
 
-#include "../include/dumbPhysics.hpp"
 #include "../include/sineSumPhysics.hpp"
 
 #include <iostream>
@@ -22,31 +20,36 @@
 #define MIN_WINDOW_WIDTH 800
 #define MIN_WINDOW_HEIGHT 400
 
-// Prototypes
+// Config
 
-bool initGraphics(GLFWwindow *&window);
-
-void key_callback(GLFWwindow*, int, int, int, int);
-void mouse_button_callback(GLFWwindow*, int, int, int);
-void window_size_callback(GLFWwindow*, int, int);
-
-void move(GLFWwindow *window, float dt);
-
-void takeScreenshot(GLFWwindow *window, const std::string &path);
+static constexpr float coeffMovement = 16.0f;
+static constexpr float coeffCameraKeyboard = 1.4f;
+static constexpr float coeffCameraMouse = 1.5f;
 
 // States
 
-Camera cam;
-double oldmx, oldmy; // Used for looking around using mouse
+static Camera cam;
+static double oldmx, oldmy; // Used for looking around using mouse
 
-bool isMesh = false;
-bool isCursorHided = false;
-bool isFreeze = true;
+static bool isMesh = false;
+static bool isCursorHided = false;
+static bool isFreeze = true;
+
+// Prototypes
+
+static bool initGraphics(GLFWwindow *&window);
+
+static void key_callback(GLFWwindow*, int, int, int, int);
+static void mouse_button_callback(GLFWwindow*, int, int, int);
+static void window_size_callback(GLFWwindow*, int, int);
+
+static void move(GLFWwindow *window, float dt);
+static void takeScreenshot(GLFWwindow *window, const std::string &path);
 
 // Main
 
 int main() {
-    GLFWwindow* window;
+    GLFWwindow *window;
     if (!initGraphics(window)) {
         return -1;
     }
@@ -55,15 +58,12 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    // WaterMeshChunk mesh(121, 121, 3.f);
-    // WaterMeshChunk mesh(61, 61, 3.f, WaterMeshChunk::OUTER, { 0.f, 0.f, 0.f });
+    cam.setPos(118.31f, 70.32f, 58.95f);
+    cam.setViewDeg(239.51f, -32.86f);
 
     WaterMesh mesh;
-
     DebugInformer debugger;
     AbstractPhysics *phys;
-
-    // phys = new DumbPhysics(3.2f, 0.87f, 3.1f);
 
     phys = new SineSumPhysics{
         SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 4.17f),
@@ -71,10 +71,6 @@ int main() {
         SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   2.21f, 0.91f, 0.12f, 7.92f),
         SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.32f, 5.17f),
     };
-
-    cam.pos = { 34.4, 40.09, 8.05 };
-    cam.yaw = glm::radians(326.06);
-    cam.pitch = glm::radians(-27.52);
 
     glClearColor(0.539f, 0.788f, 0.89f, 1.f);
     glfwSwapInterval(0);
@@ -106,7 +102,6 @@ int main() {
 
         move(window, dt);
         if (!isFreeze) {
-            // phys->process(mesh, timePhys);
             mesh.process(phys, timePhys);
         }
 
@@ -118,7 +113,7 @@ int main() {
             glm::rotate(glm::mat4(1.f), cam.pitch, glm::vec3(-1, 0, 0)) *
             glm::rotate(glm::mat4(1.f), cam.yaw, glm::vec3(0, 1, 0)) *
             glm::translate(glm::mat4(1.f), -cam.pos);
-        glm::mat4 m_ortho = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+        glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
         mesh.show(m_proj_view, isMesh, cam);
 
@@ -137,10 +132,6 @@ int main() {
 }
 
 // Window events
-
-void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
-
-}
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -172,64 +163,43 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 }
 
-void window_size_callback(GLFWwindow *window, int width, int height) {
-
-}
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {}
+void window_size_callback(GLFWwindow *window, int width, int height) {}
 
 // Movement
 
 void move(GLFWwindow *window, float dt) {
-    float coeffMovement = 16.0f;
-    float coeffCameraKeyboard = 1.4f;
-    float coeffCameraMouse = 1.5f;
-
-    glm::vec3 moveDir = cam.getMoveDir();
-    glm::vec3 leftDir = cam.getLeftDir();
-
     // View
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         cam.yaw = stepYaw(cam.yaw, coeffCameraKeyboard * dt);
-    }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
         cam.yaw = stepYaw(cam.yaw, -coeffCameraKeyboard * dt);
-    }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
         cam.pitch = stepPitch(cam.pitch, -coeffCameraKeyboard * dt);
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN)  == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_DOWN)  == GLFW_PRESS)
         cam.pitch = stepPitch(cam.pitch, coeffCameraKeyboard * dt);
-    }
 
     // Position
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        cam.pos += glm::vec3(-coeffMovement * dt * moveDir);
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        cam.pos  += glm::vec3(coeffMovement * dt * moveDir);
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        cam.pos  += glm::vec3(-coeffMovement * dt * leftDir);
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        cam.pos  += glm::vec3(coeffMovement * dt * leftDir);
-    }
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cam.pos += glm::vec3(-coeffMovement * dt * cam.getMoveDir());
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cam.pos  += glm::vec3(coeffMovement * dt * cam.getMoveDir());
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cam.pos  += glm::vec3(-coeffMovement * dt * cam.getLeftDir());
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cam.pos  += glm::vec3(coeffMovement * dt * cam.getLeftDir());
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         cam.pos.y += coeffMovement * dt;
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         cam.pos.y += -coeffMovement * dt;
-    }
 
     // Mouse
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    double dmx = mx - oldmx;
-    double dmy = my - oldmy;
+    cam.yaw = stepYaw(cam.yaw, (mx - oldmx) * -coeffCameraMouse * dt);
+    cam.pitch = stepPitch(cam.pitch, (my - oldmy) * coeffCameraMouse * dt);
     oldmx = mx;
     oldmy = my;
-
-    cam.yaw = stepYaw(cam.yaw, dmx * -coeffCameraMouse * dt);
-    cam.pitch = stepPitch(cam.pitch, dmy * coeffCameraMouse * dt);
 }
 
 // Init
@@ -278,7 +248,7 @@ void takeScreenshot(GLFWwindow *window, const std::string &path) {
 
     int ret = ImageRGB::useArray(buff, width, height).writePNG(path);
     if (ret == 0)
-        std::cerr << "Something went wrong!" << std::endl;
+        std::cerr << "Something went wrong while saving the screenshot!" << std::endl;
 
     delete[] buff;
 }

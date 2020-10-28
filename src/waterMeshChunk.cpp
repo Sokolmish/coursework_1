@@ -1,6 +1,7 @@
 #include "../include/waterMeshChunk.hpp"
 #include <cassert>
 #include <math.h>
+#include <iostream>
 
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
@@ -69,7 +70,12 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
 
 WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::vec3 &offset) {
     assert(w > 0 || h > 0 || size > 1e-4f);
-    assert(w % 2 == 1 || h % 2 == 1);
+
+    if (w % 2 == 0 || h % 2 == 0) {
+        std::cerr << "Width and height of the mesh chunk must be odd!" << std::endl;
+        w = (w % 2 == 0) ? 1 : 0;
+        h = (h % 2 == 0) ? 1 : 0;
+    }
 
     shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
     normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
@@ -79,9 +85,6 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::ve
     this->size = size;
     this->meshType = type;
     this->offset = offset;
-
-    float xoff = 0.f; // -size * width / 2.f;
-    float zoff = 0.f; // -size * height / 2.f;
 
     auto tElements = getElements();
     elementsCount = tElements.size();
@@ -99,9 +102,9 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::ve
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
             (*nodes)[zz * width + xx] = {
-                xx, zz,                                             // Orig indices
-                glm::vec3(xoff + xx * size, 0.f, zoff + zz * size), // Current pos
-                glm::vec3(0.f, 1.f, 0.f)                            // Normal
+                xx, zz,                               // Orig indices
+                glm::vec3(xx * size, 0.f, zz * size), // Current pos
+                glm::vec3(0.f, 1.f, 0.f)              // Normal
             };
         }
     }

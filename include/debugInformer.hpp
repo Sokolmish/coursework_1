@@ -29,7 +29,4 @@ public:
     void setFPS(uint fps);
 };
 
-std::string formatFloat(const std::string &format, float num);
-std::ostream& operator<<(std::ostream &os, const glm::vec3 &v);
-
 #endif
