@@ -16,6 +16,10 @@ This is the coursework for course "Algorithms of computer graphics".
 
 ## Screenshots
 
-### Sums of sinuses
+### Wrong way but cute
+
+<img src="./docs/wrongButPretty1.png">
+
+### Sums of sinuses (old)
 
 <img src="./docs/image1.png">

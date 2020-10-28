@@ -4,7 +4,7 @@ WaterMesh::WaterMesh() {
     chunks = std::vector<WaterMeshChunk*>();
 
     int chDis = 61;
-    float chBaseSize = 3.0f;
+    float chBaseSize = 3.f;
     float chSize = (chDis - 1) * chBaseSize;
 
     chunks.push_back(
@@ -47,7 +47,7 @@ void WaterMesh::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &ca
 }
 
 void WaterMesh::process(AbstractPhysics *phys, float t) {
-    for (auto &e : chunks)
+    for (auto e : chunks)
         phys->process(*e, t);
 }
 

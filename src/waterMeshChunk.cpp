@@ -165,12 +165,22 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     }
 
     shader.use();
-    shader.setUniform("m_proj_view", m_proj_view);
-    shader.setUniform("eye_pos", cam.pos);
-    shader.setUniform("view_dir", cam.getViewDir());
+
     shader.setUniform("is_mesh", isMesh);
     if (isMesh)
         shader.setUniform("mesh_color", 0.1, 0.1, 0.1); // 0.03, 0.1, 0.95
+    
+    shader.setUniform("m_proj_view", m_proj_view);
+    shader.setUniform("eye_pos", cam.pos);
+    shader.setUniform("view_dir", cam.getViewDir());
+
+    shader.setUniform("mat.ambient", glm::vec3(0.03f, 0.391f, 0.9993f) * 0.4f);
+    shader.setUniform("mat.diffuse", glm::vec3(0.03f, 0.391f, 0.9993f) * 0.35f);
+    shader.setUniform("mat.specular", glm::vec3(0.2f, 0.2f, 0.2f));
+    shader.setUniform("mat.exponent", 70.f);
+
+    shader.setUniform("globalAmb", glm::vec3(0.35f, 0.35f, 0.45f));
+    shader.setUniform("sunDir", glm::vec3(0.5f, 0.5f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);

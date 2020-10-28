@@ -67,12 +67,17 @@ int main() {
 
     phys = new SineSumPhysics{
         SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 4.17f),
-        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      1.28f, 0.98f, 1.22f, 8.47f),
+        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      1.28f, 0.98f, 0.97f, 8.47f),
         SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   2.21f, 0.91f, 0.12f, 7.92f),
-        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.32f, 5.17f),
+        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 5.17f),
+
+        // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
+        // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
+        // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
+        // SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
     };
 
-    glClearColor(0.539f, 0.788f, 0.89f, 1.f);
+    glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
     glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame

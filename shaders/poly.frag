@@ -1,10 +1,21 @@
 #version 430 core
 
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float exponent;
+};
+
 uniform bool is_mesh;
 uniform vec3 mesh_color;
 
 uniform vec3 eye_pos;
 uniform vec3 view_dir;
+
+uniform Material mat;
+uniform vec3 globalAmb;
+uniform vec3 sunDir;
 
 in vec3 vpos;
 in vec3 vnorm;
@@ -16,14 +27,20 @@ void main() {
         color = vec4(mesh_color, 1);
     }
     else {
-        vec3 light_dir = vec3(0, -1, 0);
-        float l1 = max(0, dot(-light_dir, vnorm)) / 2.0f;
+        vec3 normal = normalize(vnorm);
+        vec3 lDir = normalize(sunDir);
+        float lIntensivity = max(0, dot(lDir, normal));
 
-        vec3 lDir = normalize(vpos - eye_pos);
-        float spotAngle = dot(view_dir, lDir);
-        float lit = float(acos(spotAngle) <= radians(75.0f));
-        float l2 = lit * max(0, pow(spotAngle, 5)) / 6.f;
+        // Ambient
+        vec3 ambient = globalAmb * mat.ambient;
+        // Diffuse
+        float diff = max(dot(normal, lDir), 0);
+        vec3 diffuse = lIntensivity * (diff * mat.diffuse); // * spotlight.col
+        // Specular
+        vec3 halfway = normalize(lDir + normalize(eye_pos - vpos));
+        float spec = pow(max(dot(normal, halfway), 0), mat.exponent);
+        vec3 specular = lIntensivity * (spec * mat.specular); //  * spotlight.col
 
-        color = min(l1 + l2, 1) * vec4(0.03, 0.391, 0.9993, 1);
-    }
+        color = vec4(ambient + diffuse + specular, 1.0);
+    }   
 }
