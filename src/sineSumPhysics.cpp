@@ -25,9 +25,12 @@ void SineSumPhysics::process(WaterMeshChunk &mesh, float t) {
         // glm::vec3 norm(0.f);
         // float dx = 0;
         // float dz = 0;
+
         node.pos.y = 0.f;
         for (const auto &w : waves) {
-            float S = (w.dir.x * node.pos.x + w.dir.z * node.pos.z + w.velocity * t) * w.freq;
+            float newx = node.pos.x + mesh.getOffset().x;
+            float newz = node.pos.z + mesh.getOffset().z;
+            float S = (w.dir.x * newx + w.dir.z * newz + w.velocity * t) * w.freq;
             node.pos.y += w.amp * powf((sinf(S) + 1.f) * .5f, w.stepness);
 
             // float gradPart = w.amp * w.stepness * powf(.5f, w.stepness) * powf(sinf(S) + 1.f, w.stepness - 1) * cosf(S);

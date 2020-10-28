@@ -8,7 +8,7 @@
 #include "../include/util/image.hpp"
 
 #include "../include/debugInformer.hpp"
-#include "../include/waterMeshChunk.hpp"
+#include "../include/waterMesh.hpp"
 
 #include "../include/dumbPhysics.hpp"
 #include "../include/sineSumPhysics.hpp"
@@ -56,23 +56,20 @@ int main() {
     float ratio = (float) width / (float) height;
 
     // WaterMeshChunk mesh(121, 121, 3.f);
-    WaterMeshChunk mesh(61, 61, 3.f, WaterMeshChunk::OUTER);
+    // WaterMeshChunk mesh(61, 61, 3.f, WaterMeshChunk::OUTER, { 0.f, 0.f, 0.f });
+
+    WaterMesh mesh;
+
     DebugInformer debugger;
     AbstractPhysics *phys;
 
     // phys = new DumbPhysics(3.2f, 0.87f, 3.1f);
 
     phys = new SineSumPhysics{
-        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
-        SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
-        SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
-        // SineSumPhysics::Wave(glm::vec3{ 0.37f, 0.f, 0.24f }, 0.4f, 5.5f, 1.2f, 6.f),
-        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
-
-        // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 1.64f),
-        // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
-        // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, 0.54f }, 0.9f, 4.f, 0.5f, 0.85f),
-        // SineSumPhysics::Wave(glm::vec3{ 0.37f, 0.f, 0.24f }, 0.4f, 4.5f, 0.9f, 6.f)
+        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 4.17f),
+        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      1.28f, 0.98f, 1.22f, 8.47f),
+        SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   2.21f, 0.91f, 0.12f, 7.92f),
+        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.32f, 5.17f),
     };
 
     cam.pos = { 34.4, 40.09, 8.05 };
@@ -108,8 +105,10 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        if (!isFreeze)
-            phys->process(mesh, timePhys);
+        if (!isFreeze) {
+            // phys->process(mesh, timePhys);
+            mesh.process(phys, timePhys);
+        }
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.01f, 250.f) *

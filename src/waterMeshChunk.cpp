@@ -1,5 +1,6 @@
 #include "../include/waterMeshChunk.hpp"
 #include <cassert>
+#include <math.h>
 
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
@@ -66,7 +67,7 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
     return tElements;
 }
 
-WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type) {
+WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type, const glm::vec3 &offset) {
     assert(w > 0 || h > 0 || size > 1e-4f);
     assert(w % 2 == 1 || h % 2 == 1);
 
@@ -77,12 +78,13 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type) {
     this->height = h;
     this->size = size;
     this->meshType = type;
+    this->offset = offset;
 
-    float xoff = -size * width / 2.f;
-    float zoff = -size * height / 2.f;
+    float xoff = 0.f; // -size * width / 2.f;
+    float zoff = 0.f; // -size * height / 2.f;
 
     auto tElements = getElements();
-    elementsCount = tElements.size() * 2;
+    elementsCount = tElements.size();
     GLuint *ebuff = new GLuint[elementsCount];
     size_t ind = 0;
     for (const auto &e : tElements) {
@@ -118,18 +120,13 @@ WaterMeshChunk::WaterMeshChunk(int w, int h, float size, int type) {
     glEnableVertexAttribArray(1); // Normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(GLfloat)));
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (width - 1) * (height - 1) * 6 * sizeof(GLuint), ebuff, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementsCount * sizeof(GLuint), ebuff, GL_STATIC_DRAW);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     delete[] ebuff;
-}
-
-WaterMeshChunk::~WaterMeshChunk() {
-    delete nodes;
-    delete[] buff;
 }
 
 void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
@@ -142,6 +139,8 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
             glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx].pos;
             glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)].pos;
             glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)].pos;
+            // Here we must add offset to each point
+            // But for normals calculation it's doesn't matter
             if (zz != 0 && xx != 0)
                 norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
             if (zz != height - 1 && xx != 0)
@@ -156,7 +155,7 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
             // glm::vec3 norm = (*nodes)[zz * width + xx].norm;
 
             for (int i = 0; i < 3; i++)
-                buff[ind++] = p0[i];
+                buff[ind++] = p0[i] + offset[i];
             for (int i = 0; i < 3; i++)
                 buff[ind++] = norm[i];
         }
@@ -164,9 +163,11 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 
     shader.use();
     shader.setUniform("m_proj_view", m_proj_view);
-    shader.setUniform("is_mesh", isMesh);
     shader.setUniform("eye_pos", cam.pos);
     shader.setUniform("view_dir", cam.getViewDir());
+    shader.setUniform("is_mesh", isMesh);
+    if (isMesh)
+        shader.setUniform("mesh_color", 0.1, 0.1, 0.1); // 0.03, 0.1, 0.95
 
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -184,9 +185,10 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
 
+    // glDisable(GL_DEPTH_TEST);
     // normShader.use();
     // normShader.setUniform("m_proj_view", m_proj_view);
-    // glDrawElements(GL_TRIANGLES, (width - 1) * (height - 1) * 6, GL_UNSIGNED_INT, nullptr);
+    // glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
 
     glBindVertexArray(0);
 
@@ -217,4 +219,13 @@ float WaterMeshChunk::getSize() const {
 
 int WaterMeshChunk::getMeshType() const {
     return this->meshType;
+}
+
+glm::vec3 WaterMeshChunk::getOffset() const {
+    return offset;
+}
+
+WaterMeshChunk::~WaterMeshChunk() {
+    delete nodes;
+    delete[] buff;
 }

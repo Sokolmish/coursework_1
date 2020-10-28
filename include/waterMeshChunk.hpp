@@ -1,5 +1,5 @@
-#ifndef __WATER_MESH_H__
-#define __WATER_MESH_H__
+#ifndef __WATER_MESH_CHUNK_H__
+#define __WATER_MESH_CHUNK_H__
 
 #include "util/glew.hpp"
 #include "GLFW/glfw3.h"
@@ -31,6 +31,7 @@ private:
     float size;
     std::vector<Node> *nodes;
     int meshType;
+    glm::vec3 offset;
 
     GLuint vao, vbo, ebo;
     GLfloat *buff;
@@ -41,7 +42,7 @@ private:
     std::vector<std::pair<int, int> > getElements() const;
 
 public:
-    WaterMeshChunk(int w, int h, float size, int type);
+    WaterMeshChunk(int w, int h, float size, int type, const glm::vec3 &offset);
     ~WaterMeshChunk();
 
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
@@ -49,6 +50,7 @@ public:
     int getWidth() const;
     int getHeight() const;
     float getSize() const;
+    glm::vec3 getOffset() const;
 
     const std::vector<Node>& getNodes() const;
     std::vector<Node>& getNodes();

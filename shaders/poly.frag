@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform bool is_mesh;
+uniform vec3 mesh_color;
 
 uniform vec3 eye_pos;
 uniform vec3 view_dir;
@@ -12,7 +13,7 @@ out vec4 color;
 
 void main() {
     if (is_mesh) {
-        color = vec4(0.1, 0.1, 0.1, 1); // 0.03, 0.1, 0.95, 1
+        color = vec4(mesh_color, 1);
     }
     else {
         vec3 light_dir = vec3(0, -1, 0);
