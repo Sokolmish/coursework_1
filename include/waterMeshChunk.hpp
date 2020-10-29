@@ -48,6 +48,7 @@ private:
     Shader shader, normShader;
 
     std::vector<std::pair<int, int> > getElements() const;
+    glm::vec3 getNormal(int xx, int zz) const;
 
     friend class WaterMesh;
     WaterMesh *parent;

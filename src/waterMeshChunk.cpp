@@ -4,6 +4,9 @@
 #include <math.h>
 #include <iostream>
 
+static const bool showMeshNormals = false;
+static const bool useAnaliticalNormal = false;
+
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
     dst.push_back(p1);
@@ -36,17 +39,17 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
 
     if (meshType & EDGE_NX) {
         for (int i = 0; i < height - 2; i += 2) {
-            push_tr(tElements, { 0, i }, { 1, i + 1}, { 0, i + 2});
+            push_tr(tElements, { 0, i }, { 1, i + 1}, { 0, i + 2 });
             if (i != 0 || !(meshType & EDGE_NZ))
-                push_tr(tElements, { 0, i }, { 1, i }, { 1, i + 1});
+                push_tr(tElements, { 0, i }, { 1, i }, { 1, i + 1 });
             if (i != height - 3 || !(meshType & EDGE_PZ))
-                push_tr(tElements, { 1, i + 1 }, { 1, i + 2 }, { 0, i + 2});
+                push_tr(tElements, { 1, i + 1 }, { 1, i + 2 }, { 0, i + 2 });
         }
     }
 
     if (meshType & EDGE_PX) {
         for (int i = 0; i < height - 2; i += 2) {
-            push_tr(tElements, { width - 1, i }, { width - 1, i + 2}, { width - 2, i + 1});
+            push_tr(tElements, { width - 1, i }, { width - 1, i + 2}, { width - 2, i + 1 });
             if (i != 0 || !(meshType & EDGE_NZ))
                 push_tr(tElements, { width - 1, i }, { width - 2, i + 1}, { width - 2, i });
             if (i != height - 3 || !(meshType & EDGE_PZ))
@@ -73,9 +76,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     assert(wh > 0 && size > 1e-4f);
 
     offset = glm::vec3(xs * wh * size, 0.f, ys * wh * size);
-
-    // Warning?
-    wh += (wh % 2 == 0) ? 1 : 0;
+    wh += (wh % 2 == 0) ? 1 : 0; // Warning?
 
     posx = xs;
     posz = ys;
@@ -100,9 +101,9 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
             (*nodes)[zz * width + xx] = {
-                xx * size + offset.x, zz * size + offset.z,                     // Orig indices
-                glm::vec3(xx * size + offset.x, 0.f, zz * size + offset.z),     // Current pos
-                glm::vec3(0.f, 1.f, 0.f)                                        // Normal
+                xx * size + offset.x, zz * size + offset.z,                  // Orig indices
+                glm::vec3(xx * size + offset.x, 0.f, zz * size + offset.z),  // Current pos
+                glm::vec3(0.f, 1.f, 0.f)                                     // Normal
             };
         }
     }
@@ -130,88 +131,97 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     delete[] ebuff;
 
     shader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
-    normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
+    if constexpr (showMeshNormals)
+        normShader = Shader("./shaders/norm.vert", "./shaders/norm.frag", "./shaders/norm.geom");
+}
+
+glm::vec3 WaterMeshChunk::getNormal(int xx, int zz) const {
+    glm::vec3 norm(0.f);
+    glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
+    glm::vec3 p_negz, p_posz, p_negx, p_posx;
+
+    auto neigh_nx = parent->getChunk(posx - 1, posz);
+    auto neigh_px = parent->getChunk(posx + 1, posz);
+    auto neigh_nz = parent->getChunk(posx, posz - 1);
+    auto neigh_pz = parent->getChunk(posx, posz + 1);
+
+    if (xx == 0) {
+        if (neigh_nx != nullptr) {
+            if (meshType & EDGE_NX)
+                p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz / 2).pos;
+            else if (neigh_nx->getMeshType() & EDGE_PX)
+                p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz * 2).pos;
+            else
+                p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz).pos;
+        }
+        else
+            p_negx = glm::vec3(0.f, 1.f, 0.f);
+    }
+    else
+        p_negx = (*nodes)[zz * width + (xx - 1)].pos;
+
+    if (xx == width - 1) {
+        if (neigh_px != nullptr) {
+            if (meshType & EDGE_PX)
+                p_posx = neigh_px->getNode(1, zz / 2).pos;
+            else if (neigh_px->getMeshType() & EDGE_NX)
+                p_posx = neigh_px->getNode(1, zz * 2).pos;
+            else
+                p_posx = neigh_px->getNode(1, zz).pos;
+        }
+        else
+            p_posx = glm::vec3(0.f, 1.f, 0.f);
+    }
+    else
+        p_posx = (*nodes)[zz * width + (xx + 1)].pos;
+
+    if (zz == 0) {
+        if (neigh_nz != nullptr) {
+            if (meshType & EDGE_NZ)
+                p_negz = neigh_nz->getNode(xx / 2, neigh_nz->height - 2).pos;
+            else if (neigh_nz->getMeshType() & EDGE_PZ)
+                p_negz = neigh_nz->getNode(xx * 2, neigh_nz->height - 2).pos;
+            else
+                p_negz = neigh_nz->getNode(xx, neigh_nz->height - 2).pos;
+        }
+        else
+            p_negz = glm::vec3(0.f, 1.f, 0.f);
+    }
+    else
+        p_negz = (*nodes)[(zz - 1) * width + xx].pos;
+
+    if (zz == height - 1) {
+        if (neigh_pz != nullptr) {
+            if (meshType & EDGE_PZ)
+                p_posz = neigh_pz->getNode(xx / 2, 1).pos;
+            else if (neigh_pz->getMeshType() & EDGE_NZ)
+                p_posz = neigh_pz->getNode(xx * 2, 1).pos;
+            else
+                p_posz = neigh_pz->getNode(xx, 1).pos;
+        }
+        else
+            p_posz = glm::vec3(0.f, 1.f, 0.f);
+    }
+    else
+        p_posz = (*nodes)[(zz + 1) * width + xx].pos;
+
+    norm += (glm::cross(p_negz - p0, p_negx - p0)); // glm::normalize
+    norm += (glm::cross(p_negx - p0, p_posz - p0));
+    norm += (glm::cross(p_posz - p0, p_posx - p0));
+    norm += (glm::cross(p_posx - p0, p_negz - p0));
+    return glm::normalize(norm);
 }
 
 void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     int ind = 0;
     for (int zz = 0; zz < height; zz++) {
         for (int xx = 0; xx < width; xx++) {
-            auto neigh_nx = parent->getChunk(posx - 1, posz);
-            auto neigh_px = parent->getChunk(posx + 1, posz);
-            auto neigh_nz = parent->getChunk(posx, posz - 1);
-            auto neigh_pz = parent->getChunk(posx, posz + 1);
-
-            glm::vec3 norm(0.f);
             glm::vec3 p0 = (*nodes)[zz * width + xx].pos;
-
-            glm::vec3 p_negz = (*nodes)[(zz - 1) * width + xx].pos; // TODO: bounds
-            glm::vec3 p_posz = (*nodes)[(zz + 1) * width + xx].pos;
-            glm::vec3 p_negx = (*nodes)[zz * width + (xx - 1)].pos;
-            glm::vec3 p_posx = (*nodes)[zz * width + (xx + 1)].pos;
-
-            if (xx == 0) {
-                if (neigh_nx != nullptr) {
-                    if (meshType & EDGE_NX)
-                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz / 2).pos;
-                    else if (neigh_nx->getMeshType() & EDGE_PX)
-                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz * 2).pos;
-                    else
-                        p_negx = neigh_nx->getNode(neigh_nx->width - 2, zz).pos;
-                }
-                else {
-                    p_negx = p0 - glm::vec3(1.f, 0.f, 0.f);
-                }
-            }
-
-            if (xx == width - 1) {
-                if (neigh_px != nullptr) {
-                    if (meshType & EDGE_PX)
-                        p_posx = neigh_px->getNode(1, zz / 2).pos;
-                    else if (neigh_px->getMeshType() & EDGE_NX)
-                        p_posx = neigh_px->getNode(1, zz * 2).pos;
-                    else
-                        p_posx = neigh_px->getNode(1, zz).pos;
-                }
-                else {
-                    p_posx = p0 - glm::vec3(-1.f, 0.f, 0.f);
-                }
-            }
-
-            if (zz == 0) {
-                if (neigh_nz != nullptr) {
-                    if (meshType & EDGE_NZ)
-                        p_negz = neigh_nz->getNode(xx / 2, neigh_nz->height - 2).pos;
-                    else if (neigh_nz->getMeshType() & EDGE_PZ)
-                        p_negz = neigh_nz->getNode(xx * 2, neigh_nz->height - 2).pos;
-                    else
-                        p_negz = neigh_nz->getNode(xx, neigh_nz->height - 2).pos;
-                }
-                else {
-                    p_negz = p0 - glm::vec3(0.f, 0.f, 1.f);
-                }
-            }
-
-            if (zz == height - 1) {
-                if (neigh_pz != nullptr) {
-                    if (meshType & EDGE_PZ)
-                        p_posz = neigh_pz->getNode(xx / 2, 1).pos;
-                    else if (neigh_pz->getMeshType() & EDGE_NZ)
-                        p_posz = neigh_pz->getNode(xx * 2, 1).pos;
-                    else
-                        p_posz = neigh_pz->getNode(xx, 1).pos;  
-                }
-                else {
-                    p_posz = p0 - glm::vec3(0.f, 0.f, -1.f);
-                }
-            }
-
-            norm += glm::normalize(glm::cross(p_negz - p0, p_negx - p0));
-            norm += glm::normalize(glm::cross(p_posx - p0, p_negz - p0));
-            norm += glm::normalize(glm::cross(p_posz - p0, p_posx - p0));
-            norm = glm::normalize(norm);
-
-            // glm::vec3 norm = (*nodes)[zz * width + xx].norm;
+            glm::vec3 norm;
+            if constexpr (!useAnaliticalNormal)
+                norm = getNormal(xx, zz);
+            else
+                norm = (*nodes)[zz * width + xx].norm;
 
             for (int i = 0; i < 3; i++)
                 buff[ind++] = p0[i];
@@ -254,10 +264,12 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
 
-    // glDisable(GL_DEPTH_TEST);
-    // normShader.use();
-    // normShader.setUniform("m_proj_view", m_proj_view);
-    // glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
+    if constexpr (showMeshNormals) {
+        glDisable(GL_DEPTH_TEST);
+        normShader.use();
+        normShader.setUniform("m_proj_view", m_proj_view);
+        glDrawElements(GL_TRIANGLES, elementsCount, GL_UNSIGNED_INT, nullptr);
+    }
 
     glBindVertexArray(0);
 
