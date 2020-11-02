@@ -4,8 +4,8 @@
 #include <math.h>
 #include <iostream>
 
-static const bool showMeshNormals = false;
-static const bool useAnaliticalNormal = false;
+static constexpr bool showMeshNormals = false;
+static constexpr bool useAnaliticalNormal = false;
 
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {

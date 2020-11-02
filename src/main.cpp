@@ -3,7 +3,6 @@
 
 #include "../include/util/utility.hpp"
 #include "../include/util/camera.hpp"
-#include "../include/util/font.hpp"
 #include "../include/util/image.hpp"
 
 #include "../include/debugInformer.hpp"

@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <exception>
+#include <cstring>
 
 Font::Font(const std::string &path, uint32_t width, uint32_t height) {
     FT_Library ft;
