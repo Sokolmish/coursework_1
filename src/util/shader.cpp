@@ -10,6 +10,25 @@
 
 #define SHADER_INFOLOG_BUFSIZE 1024
 
+inline std::string getShaderTypeName(Shader::ShaderType type) {
+    switch (type) {
+    case Shader::ShaderType::VERT:
+        return "vertex";
+    case Shader::ShaderType::FRAG:
+        return "fragment";
+    case Shader::ShaderType::GEOM:
+        return "geometry";
+    case Shader::ShaderType::COMP:
+        return "compute";
+    case Shader::ShaderType::TESC:
+        return "tesselation control";
+    case Shader::ShaderType::TESE:
+        return "tesselation evaluation";
+    default:
+        return "error_type";
+    }
+}
+
 static std::string readFile(const std::string &path) {
     std::ifstream in;
     in.open(path);
@@ -19,86 +38,78 @@ static std::string readFile(const std::string &path) {
     return ss.str();
 }
 
-Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath) {
-    std::string src;
-    const GLchar *ptr;
-    GLint vSucc, fSucc, gSucc;
-    GLuint vertexId, fragmentId, geometryId = 0;
-    // Vertex shader
-    src = readFile(vertexPath);
-    ptr = src.c_str();
-    vertexId = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexId, 1, &ptr, nullptr);
-    glCompileShader(vertexId);
-    // Fragment shader
-    src = readFile(fragmentPath);
-    ptr = src.c_str();
-    fragmentId = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentId, 1, &ptr, nullptr);
-    glCompileShader(fragmentId);
-    // Geometry shader
-    if (!geometryPath.empty()) {
-        src = readFile(geometryPath);
-        ptr = src.c_str();
-        geometryId = glCreateShader(GL_GEOMETRY_SHADER);
-        glShaderSource(geometryId, 1, &ptr, nullptr);
-        glCompileShader(geometryId);
-    }
-    // Shaders status
-    glGetShaderiv(vertexId, GL_COMPILE_STATUS, &vSucc);
-    glGetShaderiv(fragmentId, GL_COMPILE_STATUS, &fSucc);
-    if (!geometryPath.empty())
-        glGetShaderiv(geometryId, GL_COMPILE_STATUS, &gSucc);
-    else
-        gSucc = true;
-    if (!(vSucc && fSucc && gSucc)) {
+GLuint Shader::compileShader(ShaderType type, const std::string &path) const {
+    std::string src = readFile(path);
+    GLint srcLen = src.length();
+    const GLchar *ptr = src.c_str();
+    GLuint shaderId = glCreateShader(static_cast<GLenum>(type));
+    glShaderSource(shaderId, 1, &ptr, &srcLen);
+    glCompileShader(shaderId);
+
+    GLint succ;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &succ);
+    if (!succ) {
         GLchar infoLog[SHADER_INFOLOG_BUFSIZE];
         GLsizei logSize;
-        if (!vSucc) {
-            glGetShaderInfoLog(vertexId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
-            std::cout << "Vertex shader compile error:" << std::endl << infoLog << std::endl;
-            if (logSize >= SHADER_INFOLOG_BUFSIZE)
-                std::cout << "======== infolog cutted ========" << std::endl;
-        }
-        if (!fSucc) {
-            glGetShaderInfoLog(fragmentId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
-            std::cout << "Fragment shader compile error:" << std::endl << infoLog << std::endl;
-            if (logSize >= SHADER_INFOLOG_BUFSIZE)
-                std::cout << "======== infolog cutted ========" << std::endl;
-        }
-        if (!gSucc) {
-            glGetShaderInfoLog(geometryId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
-            std::cout << "Geometry shader compile error:" << std::endl << infoLog << std::endl;
-            if (logSize >= SHADER_INFOLOG_BUFSIZE)
-                std::cout << "======== infolog cutted ========" << std::endl;
-        }
-        throw std::runtime_error("Shader compile error");
+        glGetShaderInfoLog(shaderId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
+        std::cerr << "Shader compile error:" << std::endl ;
+        std::cerr << "Type: " << getShaderTypeName(type) << " Path: " << path << std::endl;
+        std::cerr << infoLog << std::endl;
+        if (logSize >= SHADER_INFOLOG_BUFSIZE)
+            std::cerr << "======== infolog cutted ========" << std::endl;
+        throw std::runtime_error(getShaderTypeName(type) + " shader compile error");
     }
-    // Shader linking
-    programId = glCreateProgram();
-    glAttachShader(programId, vertexId);
-    glAttachShader(programId, fragmentId);
-    if (!geometryPath.empty())
-        glAttachShader(programId, geometryId);
+
+    return shaderId;
+}
+
+void Shader::linkProgram(GLuint programId) const {
+    GLint succ;
     glLinkProgram(programId);
-    // Final shader status
-    GLint progSucc;
-    glGetProgramiv(programId, GL_LINK_STATUS, &progSucc);
-    if (!progSucc) {
+    glGetProgramiv(programId, GL_LINK_STATUS, &succ);
+    if (!succ) {
         GLchar infoLog[SHADER_INFOLOG_BUFSIZE];
         GLsizei logSize;
         glGetProgramInfoLog(programId, SHADER_INFOLOG_BUFSIZE, &logSize, infoLog);
-        std::cout << "Shader linking error:" << std::endl << infoLog << std::endl;
+        std::cerr << "Shader linking error:" << std::endl << infoLog << std::endl;
         if (logSize >= SHADER_INFOLOG_BUFSIZE)
-            std::cout << "======== infolog cutted ========" << std::endl;
+            std::cerr << "======== infolog cutted ========" << std::endl;
         throw std::runtime_error("Shader linking error");
     }
+}
 
-    glDeleteShader(vertexId);
-    glDeleteShader(fragmentId);
+Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath) {
+    GLuint vertexId = vertexPath.empty() ? 0 : compileShader(ShaderType::VERT, vertexPath);
+    GLuint fragmentId = fragmentPath.empty() ? 0 : compileShader(ShaderType::FRAG, fragmentPath);
+    GLuint geometryId = geometryPath.empty() ? 0 : compileShader(ShaderType::GEOM, geometryPath);
+
+    programId = glCreateProgram();
+
+    if (!vertexPath.empty())
+        glAttachShader(programId, vertexId);
+    if (!fragmentPath.empty())
+        glAttachShader(programId, fragmentId);
+    if (!geometryPath.empty())
+        glAttachShader(programId, geometryId);
+
+    linkProgram(programId);
+
+    if (!vertexPath.empty())
+        glDeleteShader(vertexId);
+    if (!fragmentPath.empty())
+        glDeleteShader(fragmentId);
     if (!geometryPath.empty())
         glDeleteShader(geometryId);
 
+    initialized = true;
+}
+
+Shader::Shader(const std::string &computePath) {
+    GLuint compId = compileShader(ShaderType::COMP, computePath);
+    programId = glCreateProgram();
+    glAttachShader(programId, compId);
+    linkProgram(programId);
+    glDeleteShader(compId);
     initialized = true;
 }
 

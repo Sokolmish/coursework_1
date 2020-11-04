@@ -14,11 +14,25 @@
 
 class Shader {
 private:
+    enum class ShaderType {
+        VERT = GL_VERTEX_SHADER,
+        FRAG = GL_FRAGMENT_SHADER,
+        GEOM = GL_GEOMETRY_SHADER,
+        COMP = GL_COMPUTE_SHADER,
+        TESC = GL_TESS_CONTROL_SHADER,
+        TESE = GL_TESS_EVALUATION_SHADER,
+    };
+    friend std::string getShaderTypeName(ShaderType type);
+
     bool initialized = false;
     GLuint programId;
 
+    GLuint compileShader(ShaderType type, const std::string &path) const;
+    void linkProgram(GLuint programId) const;
+
 public:
     Shader();
+    Shader(const std::string &computePath);
     Shader(const std::string &vertexPath, const std::string &fragmentPath, const std::string &geometryPath = "");
 
     void use() const;
