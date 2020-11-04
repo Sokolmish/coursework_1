@@ -5,6 +5,8 @@
 #include <vector>
 #include <initializer_list>
 #include <glm/vec3.hpp>
+#include "util/glew.hpp"
+#include "util/shader.hpp"
 
 class SineSumPhysics : public AbstractPhysics {
 public:
@@ -19,8 +21,10 @@ public:
 private:
     std::vector<Wave> waves;
 
+    Shader compShader;
+    GLuint ssbo[2];
+
 public:
-    SineSumPhysics();
     SineSumPhysics(std::initializer_list<Wave> list);
 
     void addWave(const glm::vec3 &dir, float amp, float freq, float velocity, float stepness);

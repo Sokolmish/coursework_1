@@ -9,6 +9,7 @@
 #include "../include/waterMesh.hpp"
 
 #include "../include/sineSumPhysics.hpp"
+#include "../include/computeTest.hpp"
 
 #include <iostream>
 #include <string>
@@ -83,6 +84,8 @@ int main() {
     float timeFPS = timePhys;        // Used for fps counting, updates every second
     uint framesCounter = 0;
     uint fps = 0;
+
+    // compTest().saveImage("");
 
     while (!glfwWindowShouldClose(window)) {
         // Time deltas
