@@ -23,7 +23,7 @@
 
 static constexpr float coeffMovement = 19.0f;
 static constexpr float coeffCameraKeyboard = 1.4f;
-static constexpr float coeffCameraMouse = 1.5f;
+static constexpr float coeffCameraMouse = 0.6f;
 
 // States
 
@@ -77,7 +77,7 @@ int main() {
     };
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame
     float timeFPS = timePhys;        // Used for fps counting, updates every second

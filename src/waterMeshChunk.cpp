@@ -115,7 +115,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-    glBufferData(GL_ARRAY_BUFFER, width * height * 6 * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, width * height * 6 * sizeof(GLfloat), nullptr, GL_STREAM_DRAW);
     size_t stride = 6 * sizeof(GLfloat);
     glEnableVertexAttribArray(0); // Location
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)(0 * sizeof(GLfloat)));

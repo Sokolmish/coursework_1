@@ -10,7 +10,7 @@ SineSumPhysics::Wave::Wave(const glm::vec3 &dir, float amp, float freq, float ve
 
 SineSumPhysics::SineSumPhysics() : waves(std::vector<Wave>()) {}
 
-SineSumPhysics::SineSumPhysics(std::initializer_list<Wave> list) {
+SineSumPhysics::SineSumPhysics(const std::initializer_list<Wave> &list) {
     waves = std::vector<Wave>();
     for (auto e : list) {
         e.dir = glm::normalize(e.dir);

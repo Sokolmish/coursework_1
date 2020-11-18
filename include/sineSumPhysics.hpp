@@ -21,7 +21,7 @@ private:
 
 public:
     SineSumPhysics();
-    SineSumPhysics(std::initializer_list<Wave> list);
+    SineSumPhysics(const std::initializer_list<Wave> &list);
 
     void addWave(const glm::vec3 &dir, float amp, float freq, float velocity, float stepness);
 
