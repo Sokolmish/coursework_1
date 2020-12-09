@@ -23,24 +23,24 @@ void SineSumPhysics::addWave(const glm::vec3 &dir, float amp, float freq, float 
 }
 
 void SineSumPhysics::process(WaterMeshChunk &mesh, float t) {
-    for (auto &node : mesh.getNodes()) {
-        float dx = 0;
-        float dz = 0;
-        static_cast<void>(dx);
-        static_cast<void>(dz);
+    // for (auto &node : mesh.getNodes()) {
+    //     float dx = 0;
+    //     float dz = 0;
+    //     static_cast<void>(dx);
+    //     static_cast<void>(dz);
 
-        node.pos.y = 0.f;
-        for (const auto &w : waves) {
-            float S = (w.dir.x * node.pos.x + w.dir.z * node.pos.z + w.velocity * t) * w.freq;
-            node.pos.y += w.amp * powf((sinf(S) + 1.f) * .5f, w.stepness);
+    //     node.pos.y = 0.f;
+    //     for (const auto &w : waves) {
+    //         float S = (w.dir.x * node.pos.x + w.dir.z * node.pos.z + w.velocity * t) * w.freq;
+    //         node.pos.y += w.amp * powf((sinf(S) + 1.f) * .5f, w.stepness);
             
-            if constexpr (computeNormal) {
-                float gradPart = w.amp * w.stepness * powf(.5f, w.stepness) * powf(sinf(S) + 1.f, w.stepness - 1) * cosf(S);
-                dx += gradPart * w.dir.x;
-                dz += gradPart * w.dir.z;
-            }
-        }
-        if constexpr (computeNormal)
-            node.norm = glm::normalize(glm::vec3(-dx, 1.f, -dz));
-    }
+    //         if constexpr (computeNormal) {
+    //             float gradPart = w.amp * w.stepness * powf(.5f, w.stepness) * powf(sinf(S) + 1.f, w.stepness - 1) * cosf(S);
+    //             dx += gradPart * w.dir.x;
+    //             dz += gradPart * w.dir.z;
+    //         }
+    //     }
+    //     if constexpr (computeNormal)
+    //         node.norm = glm::normalize(glm::vec3(-dx, 1.f, -dz));
+    // }
 }

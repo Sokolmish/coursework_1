@@ -27,28 +27,25 @@ public:
         OUTER = EDGE_NX | EDGE_PX | EDGE_NZ | EDGE_PZ,
     };
 
-    struct Node {
-        float origx, origy;
-        glm::vec3 pos, norm;
-    };
+    GLuint texIds[2];
 
 private:
     int posx, posz;
 
     int width, height;
     float size;
-    std::vector<Node> *nodes;
     int meshType;
     glm::vec3 offset;
-
-    GLuint vao, vbo, ebo;
-    GLfloat *buff;
     int elementsCount;
 
-    Shader shader, normShader;
+    GLuint vao, vbo;
+    GLfloat *buff;
 
-    std::vector<std::pair<int, int> > getElements() const;
-    glm::vec3 getNormal(int xx, int zz) const;
+    Shader showShader;
+    Shader physShader, normShader;
+    Shader txShader;
+
+    GLuint debugVAO, debugVBO;
 
     friend class WaterMesh;
     WaterMesh *parent;
@@ -58,6 +55,7 @@ public:
     ~WaterMeshChunk();
 
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
+    void showDebugImage(const glm::mat4 &m_ortho, float time) const;
 
     int getWidth() const;
     int getHeight() const;
@@ -65,11 +63,6 @@ public:
     glm::vec3 getOffset() const;
     int getMeshType() const;
     std::pair<int, int> getChunkPos() const;
-
-    Node getNode(int xx, int zz) const;
-
-    const std::vector<Node>& getNodes() const;
-    std::vector<Node>& getNodes();
 };
 
 #endif

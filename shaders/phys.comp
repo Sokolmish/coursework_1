@@ -1,0 +1,15 @@
+#version 430 core
+
+layout(binding = 0, rgba32f) uniform writeonly image2D heightMap;
+
+uniform float meshSize;
+uniform float time;
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+void main() {
+    ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
+    float S = (0.5 * storePos.x * meshSize + 0.5 * storePos.y * meshSize + 5.68 * time) * 0.19;
+    vec3 res = vec3(storePos.x * meshSize, pow((sin(S) + 1) * 0.5, 1.87), storePos.y * meshSize);
+    imageStore(heightMap, storePos, vec4(res, 1.0));
+}

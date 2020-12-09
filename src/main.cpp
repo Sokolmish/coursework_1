@@ -6,9 +6,7 @@
 #include "../include/util/image.hpp"
 
 #include "../include/debugInformer.hpp"
-#include "../include/waterMesh.hpp"
-
-#include "../include/sineSumPhysics.hpp"
+#include "../include/waterMeshChunk.hpp"
 
 #include <iostream>
 #include <string>
@@ -24,6 +22,8 @@
 static constexpr float coeffMovement = 19.0f;
 static constexpr float coeffCameraKeyboard = 1.4f;
 static constexpr float coeffCameraMouse = 0.6f;
+
+static constexpr bool disableVsync = false;
 
 // States
 
@@ -60,24 +60,13 @@ int main() {
     cam.setPos(118.31f, 70.32f, 58.95f);
     cam.setViewDeg(239.51f, -32.86f);
 
-    WaterMesh mesh;
+    WaterMeshChunk mesh(64, 3.5f, 0, 0, 0);
     DebugInformer debugger;
-    AbstractPhysics *phys;
-
-    phys = new SineSumPhysics{
-        SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
-        SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
-        SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
-        SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
-
-        // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
-        // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
-        // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
-        // SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
-    };
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
-    // glfwSwapInterval(0);
+    
+    if constexpr (disableVsync)
+        glfwSwapInterval(0);
 
     float timePhys = glfwGetTime();  // Used for physics, updates every frame
     float timeFPS = timePhys;        // Used for fps counting, updates every second
@@ -105,9 +94,8 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        if (!isFreeze) {
-            mesh.process(phys, timePhys);
-        }
+        // if (!isFreeze)
+        //     phys->process(mesh, timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.01f, 250.f) *
@@ -119,7 +107,9 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
-        mesh.show(m_proj_view, isMesh, cam);
+        // mesh.show(m_proj_view, isMesh, cam);
+
+        mesh.showDebugImage(m_ortho, timePhys);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);
@@ -130,7 +120,6 @@ int main() {
         glfwSwapBuffers(window);
     }
 
-    delete phys;
     glfwTerminate();
     return 0;
 }
@@ -138,10 +127,7 @@ int main() {
 // Window events
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        // TODO: menu
-    }
-    else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
         isCursorHided = !isCursorHided;
         if (isCursorHided)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -192,9 +178,9 @@ void move(GLFWwindow *window, float dt) {
         cam.pos  += glm::vec3(-coeffMovement * dt * cam.getLeftDir());
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cam.pos  += glm::vec3(coeffMovement * dt * cam.getLeftDir());
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         cam.pos.y += coeffMovement * dt;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         cam.pos.y += -coeffMovement * dt;
 
     // Mouse
@@ -245,7 +231,7 @@ void takeScreenshot(GLFWwindow *window, const std::string &path) {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
     GLubyte *buff = new GLubyte[width * height * 3l];
-    
+
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buff);
     glPixelStorei(GL_PACK_ALIGNMENT, 4);
@@ -256,3 +242,16 @@ void takeScreenshot(GLFWwindow *window, const std::string &path) {
 
     delete[] buff;
 }
+
+// // dir amp freq velocity stepness
+// phys = new SineSumPhysics{
+//     SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
+//     SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
+//     SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
+//     SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
+
+//     // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
+//     // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
+//     // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
+//     // SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
+// };
