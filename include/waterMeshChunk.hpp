@@ -27,8 +27,6 @@ public:
         OUTER = EDGE_NX | EDGE_PX | EDGE_NZ | EDGE_PZ,
     };
 
-    GLuint texIds[2];
-
 private:
     int posx, posz;
 
@@ -45,6 +43,8 @@ private:
     Shader physShader, normShader;
     Shader txShader;
 
+    GLuint texIds[1];
+    GLuint tvbo, tvao;
     GLuint debugVAO, debugVBO;
 
     friend class WaterMesh;

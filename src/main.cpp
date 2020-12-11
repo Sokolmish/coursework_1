@@ -60,7 +60,7 @@ int main() {
     cam.setPos(118.31f, 70.32f, 58.95f);
     cam.setViewDeg(239.51f, -32.86f);
 
-    WaterMeshChunk mesh(64, 3.5f, 0, 0, 0);
+    WaterMeshChunk mesh(128, 3.5f, 0, 0, 0);
     DebugInformer debugger;
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f

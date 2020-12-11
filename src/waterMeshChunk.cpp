@@ -38,13 +38,6 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 
-    glBindTexture(GL_TEXTURE_2D, texIds[1]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-
     glBindTexture(GL_TEXTURE_2D, 0);
 
     showShader = Shader("./shaders/poly.vert", "./shaders/poly.frag");
@@ -66,6 +59,16 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 12 * 4, vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenVertexArrays(1, &tvao);
+    glGenBuffers(1, &tvbo);
+    glBindVertexArray(tvao);
+    glBindBuffer(GL_ARRAY_BUFFER, tvbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * width * height * 3, nullptr, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -112,18 +115,15 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 
 void WaterMeshChunk::showDebugImage(const glm::mat4 &m_ortho, float time) const {
     physShader.use();
-    physShader.setUniform("heightMap", 0);
     physShader.setUniform("time", time);
     physShader.setUniform("meshSize", size);
-    glBindImageTexture(0, texIds[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, tvbo);
     glDispatchCompute(width, height, 1);
     glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     normShader.use();
-    normShader.setUniform("heightMap", 0);
-    normShader.setUniform("normalMap", 1);
-    glBindImageTexture(0, texIds[0], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, texIds[1], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, tvbo);
+    glBindImageTexture(1, texIds[0], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glDispatchCompute(width, height, 1);
     glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -131,11 +131,8 @@ void WaterMeshChunk::showDebugImage(const glm::mat4 &m_ortho, float time) const 
     txShader.setUniform("projection", m_ortho);
     txShader.setUniform("tex", 0);
     glActiveTexture(GL_TEXTURE0);
-
     glBindVertexArray(debugVAO);
-    glBindTexture(GL_TEXTURE_2D, texIds[0]); 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindTexture(GL_TEXTURE_2D, texIds[1]); 
+    glBindTexture(GL_TEXTURE_2D, texIds[0]);
     glDrawArrays(GL_TRIANGLES, 6, 6);
     glBindVertexArray(0);
 }
