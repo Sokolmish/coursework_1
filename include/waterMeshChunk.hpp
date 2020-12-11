@@ -9,7 +9,7 @@
 
 #include "util/shader.hpp"
 #include "util/camera.hpp"
-#include "wave1.hpp"
+#include "wave2.hpp"
 
 #include <vector>
 #include <initializer_list>
@@ -44,7 +44,7 @@ private:
     Shader showShader;
     Shader physShader, normShader;
 
-    std::vector<Wave1> waves;
+    std::vector<Wave2> waves;
     GLuint wavesBuffID;
 
     // Debug
@@ -58,8 +58,8 @@ public:
     WaterMeshChunk(int wh, float size, int type, int xs, int ys);
     ~WaterMeshChunk();
 
-    void addWave(const Wave1 &w);
-    void addWaves(const std::initializer_list<Wave1> &ws);
+    void addWave(const Wave2 &w);
+    void addWaves(const std::initializer_list<Wave2> &ws);
     void clearWaves();
 
     void computePhysics(float absTime) const;

@@ -32,7 +32,7 @@ static double oldmx, oldmy; // Used for looking around using mouse
 
 static bool isMesh = false;
 static bool isCursorHided = false;
-static bool isFreeze = true;
+static bool isFreeze = false;
 
 // Prototypes
 
@@ -57,21 +57,20 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    cam.setPos(463, 138, 753);
+    cam.setPos(833, 138, 874);
     cam.setViewDeg(84, -23);
 
     WaterMeshChunk mesh(512, 3.4f, 0, 0, 0);
     mesh.addWaves({
-        Wave1(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
-        Wave1(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
-        Wave1(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
-        Wave1(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
+        Wave2({ -1.f, 0.f, -0.18f }, 1.3f, 30.f, 0.f),
+        Wave2({ -1.f, 0.f, +0.28f }, 0.3f, 9.f, 0.f),
+        Wave2({ -1.f, 0.f, +0.14f }, 0.6f, 26.f, 0.f),
     });
 
     DebugInformer debugger;
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
-    
+
     if constexpr (disableVsync)
         glfwSwapInterval(0);
 
@@ -101,7 +100,7 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        if (!isFreeze)
+        // if (!isFreeze)
             mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
@@ -248,16 +247,3 @@ void takeScreenshot(GLFWwindow *window, const std::string &path) {
 
     delete[] buff;
 }
-
-// // dir amp freq velocity stepness
-// phys = new SineSumPhysics{
-//     SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
-//     SineSumPhysics::Wave(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
-//     SineSumPhysics::Wave(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
-//     SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
-
-//     // SineSumPhysics::Wave(glm::vec3{ 1.f, 0.f, 0.08f }, 2.87f, 2.19f, 0.71f, 2.47f),
-//     // SineSumPhysics::Wave(glm::vec3{ .5f, 0.f, 0.6f }, 1.76f, 3.12f, 0.52f, 4.47f),
-//     // SineSumPhysics::Wave(glm::vec3{ 0.17f, 0.f, -0.24f }, 1.1f, 5.f, 0.7f, 0.85f),
-//     // SineSumPhysics::Wave(glm::vec3{ .15f, 0.f, 0.54f }, 1.02f, 2.91f, 0.32f, 3.17f),
-// };

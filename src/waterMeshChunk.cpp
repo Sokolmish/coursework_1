@@ -74,11 +74,9 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Waves buffer init
-    GLfloat defWave[7] = { .5f, 0.f, .5f, 5.f, .19f, 5.68f, 1.87 };
     glGenBuffers(1, &wavesBuffID);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
-    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, wavesBuffID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 7, defWave, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 6, nullptr, GL_STATIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     // Shaders loading
@@ -179,30 +177,29 @@ void WaterMeshChunk::computePhysics(float absTime) const {
 
 void WaterMeshChunk::fillWavesBuff() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 7, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 6, nullptr, GL_STATIC_DRAW);
     GLfloat *ptr = static_cast<GLfloat*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
 
     uint ind = 0;
     for (const auto &w : waves) {
-        ptr[ind++] = w.dir.x;
-        ptr[ind++] = w.dir.y;
-        ptr[ind++] = w.dir.z;
-        ptr[ind++] = w.amp;
-        ptr[ind++] = w.freq;
-        ptr[ind++] = w.vel;
-        ptr[ind++] = w.st;
+        ptr[ind++] = w.dir.x;   // 0
+        ptr[ind++] = w.dir.y;   // 1
+        ptr[ind++] = w.dir.z;   // 2
+        ptr[ind++] = w.A;       // 3
+        ptr[ind++] = w.w;       // 4
+        ptr[ind++] = w.phi;     // 5
     }
 
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void WaterMeshChunk::addWave(const Wave1 &w) {
+void WaterMeshChunk::addWave(const Wave2 &w) {
     waves.push_back(w);
     fillWavesBuff();
 }
 
-void WaterMeshChunk::addWaves(const std::initializer_list<Wave1> &ws) {
+void WaterMeshChunk::addWaves(const std::initializer_list<Wave2> &ws) {
     for (const auto &w : ws)
         waves.push_back(w);
     fillWavesBuff();
