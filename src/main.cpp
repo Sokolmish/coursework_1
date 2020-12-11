@@ -57,10 +57,10 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    cam.setPos(118.31f, 70.32f, 58.95f);
-    cam.setViewDeg(239.51f, -32.86f);
+    cam.setPos(456, 138, 753);
+    cam.setViewDeg(104, -23);
 
-    WaterMeshChunk mesh(128, 3.5f, 0, 0, 0);
+    WaterMeshChunk mesh(512, 3.4f, 0, 0, 0);
     DebugInformer debugger;
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
@@ -94,8 +94,8 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        // if (!isFreeze)
-        //     phys->process(mesh, timePhys);
+        if (!isFreeze)
+            mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.01f, 250.f) *
@@ -107,9 +107,8 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
-        // mesh.show(m_proj_view, isMesh, cam);
-
-        mesh.showDebugImage(m_ortho, timePhys);
+        mesh.show(m_proj_view, isMesh, cam);
+        // mesh.showDebugImage(m_ortho, timePhys);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);

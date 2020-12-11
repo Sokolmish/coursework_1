@@ -17,8 +17,12 @@ uniform Material mat;
 uniform vec3 globalAmb;
 uniform vec3 sunDir;
 
+uniform int gWidth;
+uniform int gHeight;
+uniform float gSize;
+uniform sampler2D normalMap;
+
 in vec3 vpos;
-in vec3 vnorm;
 
 out vec4 color;
 
@@ -27,7 +31,7 @@ void main() {
         color = vec4(mesh_color, 1);
     }
     else {
-        vec3 normal = normalize(vnorm);
+        vec3 normal = texture(normalMap, vpos.xz / vec2(gWidth * gSize, gHeight * gSize)).xyz;
         vec3 lDir = normalize(sunDir);
         float lIntensivity = max(0, dot(lDir, normal));
 

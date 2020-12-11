@@ -36,16 +36,17 @@ private:
     glm::vec3 offset;
     int elementsCount;
 
-    GLuint vao, vbo;
-    GLfloat *buff;
+    GLuint vao, vbo, ebo;
+    GLuint normalMapID;
 
     Shader showShader;
     Shader physShader, normShader;
+    
+    // Debug
+    GLuint debugVAO, debugVBO;
     Shader txShader;
 
-    GLuint texIds[1];
-    GLuint tvbo, tvao;
-    GLuint debugVAO, debugVBO;
+    std::vector<std::pair<int, int> > getElements() const;
 
     friend class WaterMesh;
     WaterMesh *parent;
@@ -54,6 +55,7 @@ public:
     WaterMeshChunk(int wh, float size, int type, int xs, int ys);
     ~WaterMeshChunk();
 
+    void computePhysics(float absTime) const;
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
     void showDebugImage(const glm::mat4 &m_ortho, float time) const;
 
