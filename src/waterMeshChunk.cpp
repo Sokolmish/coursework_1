@@ -3,6 +3,10 @@
 #include <math.h>
 #include <iostream>
 
+using namespace std::complex_literals;
+
+static constexpr bool useTrueRandom = false;
+
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
     dst.push_back(p1);
@@ -30,6 +34,15 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     this->width = wh;
     this->height = wh;
     this->size = size;
+
+    if constexpr(useTrueRandom) {
+        auto rd = (std::random_device())();
+        std::cout << "Rd = " << rd << std::endl;
+        gen = std::mt19937(rd);
+    }
+    else
+        gen = std::mt19937(3060);
+    dis = std::uniform_real_distribution<float>(-1.f, 1.f);
 
     // EBO computation
     auto tElements = getElements();
@@ -74,7 +87,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     // Waves buffer init
     glGenBuffers(1, &wavesBuffID);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 6, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 7, nullptr, GL_STATIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     // Shaders loading
@@ -155,6 +168,8 @@ void WaterMeshChunk::showDebugImage(const glm::mat4 &m_ortho, float time) const 
 }
 
 void WaterMeshChunk::computePhysics(float absTime) const {
+    fillWavesBuff(absTime);
+
     physShader.use();
     physShader.setUniform("time", absTime);
     physShader.setUniform("meshSize", size);
@@ -171,40 +186,60 @@ void WaterMeshChunk::computePhysics(float absTime) const {
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-// Waves
-
-void WaterMeshChunk::fillWavesBuff() const {
+void WaterMeshChunk::fillWavesBuff(float absTime) const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 6, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 7, nullptr, GL_STATIC_DRAW);
     GLfloat *ptr = static_cast<GLfloat*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
 
     uint ind = 0;
     for (const auto &w : waves) {
-        ptr[ind++] = w.dir.x;   // 0
-        ptr[ind++] = w.dir.y;   // 1
-        ptr[ind++] = w.dir.z;   // 2
-        ptr[ind++] = w.A;       // 3
-        ptr[ind++] = w.w;       // 4
-        ptr[ind++] = w.phi;     // 5
+        auto coeff = w.second * exp(1if * w.first.w * absTime) + conj(w.second * exp(-1if * w.first.w * absTime));
+
+        ptr[ind++] = w.first.dir.x; // 0
+        ptr[ind++] = w.first.dir.y; // 1
+        ptr[ind++] = w.first.dir.z; // 2
+        ptr[ind++] = w.first.A;     // 3
+        ptr[ind++] = w.first.w;     // 4
+        ptr[ind++] = coeff.real();  // 5
+        ptr[ind++] = coeff.imag();  // 6
     }
 
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
+// Waves
+
+std::complex<float> WaterMeshChunk::computeH0(const Wave2 &w) const {
+    float cosphi = glm::dot(windDir, glm::normalize(w.dir));
+    float L = windSpeed * windSpeed / 9.81f;
+    float Ph = w.A * cosphi * cosphi / (w.k * w.k * w.k * w.k) * expf(-1.f / (w.k * L));
+    float xi_re = dis(gen);
+    float xi_im = dis(gen);
+    return (float)M_SQRT1_2 * (xi_re + 1if * xi_im) * sqrtf(Ph);
+}
+
 void WaterMeshChunk::addWave(const Wave2 &w) {
-    waves.push_back(w);
-    fillWavesBuff();
+    waves.push_back({ w, computeH0(w) });
+    // fillWavesBuff();
 }
 
 void WaterMeshChunk::addWaves(const std::initializer_list<Wave2> &ws) {
     for (const auto &w : ws)
-        waves.push_back(w);
-    fillWavesBuff();
+        waves.push_back({ w, computeH0(w) });
+    // fillWavesBuff();
 }
 
 void WaterMeshChunk::clearWaves() {
     waves.clear();
+}
+
+void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
+    windDir = glm::normalize(dir);
+    windSpeed = speed;
+    for (auto &w : waves)
+        w = { w.first, computeH0(w.first) };
+    // fillWavesBuff();
 }
 
 // Getters

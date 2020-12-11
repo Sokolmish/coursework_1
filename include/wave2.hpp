@@ -10,7 +10,6 @@ struct Wave2 {
 
     float A; // Amplitude
     float lambda; // Wavelength
-    float phi; // Offset
 
     float k; // Wavenumber
     float w; // Phase speed
@@ -18,11 +17,9 @@ struct Wave2 {
     glm::vec3 dir;
 
     Wave2() = default;
-    Wave2(const glm::vec3 &dir, float amp, float wavelen, float offset) {
+    Wave2(const glm::vec3 &dir, float amp, float wavelen) {
         this->A = amp;
         this->lambda = wavelen;
-        this->phi = offset;
-
         this->k = 2.f * M_PI / lambda;
         this->w = sqrtf(g * k);
 

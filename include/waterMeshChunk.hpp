@@ -12,6 +12,8 @@
 
 #include <vector>
 #include <initializer_list>
+#include <random>
+#include <complex>
 
 class WaterMeshChunk {
 private:
@@ -23,9 +25,14 @@ private:
 
     GLuint vao, vbo, ebo;
     GLuint normalMapID;
-
-    std::vector<Wave2> waves;
     GLuint wavesBuffID;
+
+    std::vector<std::pair<Wave2, std::complex<float> > > waves;
+    glm::vec3 windDir;
+    float windSpeed;
+
+    mutable std::mt19937 gen; // Standard mersenne twister engine
+    mutable std::uniform_real_distribution<float> dis;
 
     Shader showShader;
     Shader physShader, normShader;
@@ -35,7 +42,8 @@ private:
     Shader txShader;
 
     std::vector<std::pair<int, int> > getElements() const;
-    void fillWavesBuff() const;
+    void fillWavesBuff(float absTime) const;
+    std::complex<float> computeH0(const Wave2 &w) const;
 
 public:
     WaterMeshChunk(int wh, float size, int xs, int ys);
@@ -47,6 +55,8 @@ public:
     void computePhysics(float absTime) const;
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
     void showDebugImage(const glm::mat4 &m_ortho, float time) const;
+
+    void setWind(const glm::vec3 &dir, float speed);
 
     int getWidth() const;
     int getHeight() const;

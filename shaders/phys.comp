@@ -11,22 +11,29 @@ uniform float meshSize;
 uniform float time;
 uniform int wavesCount;
 
+// uniform float xi_re;
+// uniform float xi_im;
+// uniform vec3 windDir;
+// uniform float windSpeed;
+
 layout (local_size_x = 1, local_size_y = 1) in;
 
 void main() {
     ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
     uint baseIndex = (storePos.y * gl_NumWorkGroups.x + storePos.x) * 3;
 
-    vec3 offset = vec3(0, 0, 0);
+    // vec3 offset = vec3(0, 0, 0);
+    float height = 0.0;
     for (int i = 0; i < wavesCount; i++) {
-        vec2 k = vec2(ws[i * 6 + 0], ws[i * 6 + 2]);
+        int cbs = i * 7;
+
+        vec2 k = vec2(ws[cbs + 0], ws[cbs + 2]);
         float dp = dot(k, vec2(storePos)) * meshSize;
-        float S = dp - ws[i * 6 + 4] * time + ws[i * 6 + 5];
-        offset.y += ws[i * 6 + 3] * cos(S);
-        offset.xz += ws[i * 6 + 3] * normalize(k) * sin(S);
+        float Re = ws[cbs + 5] * cos(dp) + ws[cbs + 6] * sin(dp);
+        height += Re;
     }
 
-    heightMap[baseIndex + 0] = storePos.x * meshSize - offset.x;
-    heightMap[baseIndex + 1] = offset.y;
-    heightMap[baseIndex + 2] = storePos.y * meshSize - offset.y;
+    heightMap[baseIndex + 0] = storePos.x * meshSize;
+    heightMap[baseIndex + 1] = height;
+    heightMap[baseIndex + 2] = storePos.y * meshSize;
 }

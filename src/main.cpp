@@ -62,10 +62,11 @@ int main() {
 
     WaterMeshChunk mesh(512, 3.4f, 0, 0);
     mesh.addWaves({
-        Wave2({ -1.f, 0.f, -0.18f }, 1.3f, 30.f, 0.f),
-        Wave2({ -1.f, 0.f, +0.28f }, 0.3f, 9.f, 0.f),
-        Wave2({ -1.f, 0.f, +0.14f }, 0.6f, 26.f, 0.f),
+        Wave2({ -1.f, 0.f, -0.18f }, 0.4f, 30.f),
+        Wave2({ -1.f, 0.f, +0.48f }, 0.18f, 9.f),
+        Wave2({ -1.f, 0.f, +0.14f }, 0.07f, 26.f),
     });
+    mesh.setWind({ -1.f, 0, 0.04 }, 3.5f);
 
     DebugInformer debugger;
 
