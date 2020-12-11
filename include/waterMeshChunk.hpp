@@ -6,11 +6,13 @@
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
-#include <vector>
+
 #include "util/shader.hpp"
 #include "util/camera.hpp"
+#include "wave1.hpp"
 
-class WaterMesh;
+#include <vector>
+#include <initializer_list>
 
 class WaterMeshChunk {
 public:
@@ -41,19 +43,24 @@ private:
 
     Shader showShader;
     Shader physShader, normShader;
-    
+
+    std::vector<Wave1> waves;
+    GLuint wavesBuffID;
+
     // Debug
     GLuint debugVAO, debugVBO;
     Shader txShader;
 
     std::vector<std::pair<int, int> > getElements() const;
-
-    friend class WaterMesh;
-    WaterMesh *parent;
+    void fillWavesBuff() const;
 
 public:
     WaterMeshChunk(int wh, float size, int type, int xs, int ys);
     ~WaterMeshChunk();
+
+    void addWave(const Wave1 &w);
+    void addWaves(const std::initializer_list<Wave1> &ws);
+    void clearWaves();
 
     void computePhysics(float absTime) const;
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;

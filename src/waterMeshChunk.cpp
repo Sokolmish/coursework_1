@@ -1,5 +1,4 @@
 #include "../include/waterMeshChunk.hpp"
-#include "../include/waterMesh.hpp"
 #include <cassert>
 #include <math.h>
 #include <iostream>
@@ -34,6 +33,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     this->size = size;
     this->meshType = type;
 
+    // EBO computation
     auto tElements = getElements();
     elementsCount = tElements.size();
     GLuint *ebuff = new GLuint[elementsCount];
@@ -44,34 +44,44 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
         ebuff[ind++] = z * width + x;
     }
 
+    // Main buffers init
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
-    glGenTextures(1, &normalMapID);
 
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * width * height * 3, nullptr, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * width * height * 3, nullptr, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementsCount * sizeof(GLuint), ebuff, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * elementsCount, ebuff, GL_STATIC_DRAW);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     delete[] ebuff;
 
+    // Texture init
+    glGenTextures(1, &normalMapID);
     glBindTexture(GL_TEXTURE_2D, normalMapID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    // Waves buffer init
+    GLfloat defWave[7] = { .5f, 0.f, .5f, 5.f, .19f, 5.68f, 1.87 };
+    glGenBuffers(1, &wavesBuffID);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, wavesBuffID);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * 7, defWave, GL_STATIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    // Shaders loading
     showShader = Shader("./shaders/water.vert", "./shaders/water.frag");
     physShader = Shader("./shaders/phys.comp");
     normShader = Shader("./shaders/normc.comp");
@@ -95,7 +105,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {    
+void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const {
     showShader.use();
 
     showShader.setUniform("is_mesh", isMesh);
@@ -114,9 +124,8 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     showShader.setUniform("globalAmb", glm::vec3(0.35f, 0.35f, 0.45f));
     showShader.setUniform("sunDir", glm::vec3(0.5f, 0.5f, 0.0f));
 
-    showShader.setUniform("gWidth", width);
-    showShader.setUniform("gHeight", height); 
-    showShader.setUniform("gSize", size);
+    showShader.setUniform("gWidth", width * size);
+    showShader.setUniform("gHeight", height * size);
     showShader.setUniform("normalMap", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, normalMapID);
@@ -153,7 +162,9 @@ void WaterMeshChunk::computePhysics(float absTime) const {
     physShader.use();
     physShader.setUniform("time", absTime);
     physShader.setUniform("meshSize", size);
+    physShader.setUniform("wavesCount", (int)waves.size());
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, wavesBuffID);
     glDispatchCompute(width, height, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS); // GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
 
@@ -162,6 +173,43 @@ void WaterMeshChunk::computePhysics(float absTime) const {
     glBindImageTexture(1, normalMapID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glDispatchCompute(width, height, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}
+
+// Waves
+
+void WaterMeshChunk::fillWavesBuff() const {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 7, nullptr, GL_STATIC_DRAW);
+    GLfloat *ptr = static_cast<GLfloat*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
+
+    uint ind = 0;
+    for (const auto &w : waves) {
+        ptr[ind++] = w.dir.x;
+        ptr[ind++] = w.dir.y;
+        ptr[ind++] = w.dir.z;
+        ptr[ind++] = w.amp;
+        ptr[ind++] = w.freq;
+        ptr[ind++] = w.vel;
+        ptr[ind++] = w.st;
+    }
+
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void WaterMeshChunk::addWave(const Wave1 &w) {
+    waves.push_back(w);
+    fillWavesBuff();
+}
+
+void WaterMeshChunk::addWaves(const std::initializer_list<Wave1> &ws) {
+    for (const auto &w : ws)
+        waves.push_back(w);
+    fillWavesBuff();
+}
+
+void WaterMeshChunk::clearWaves() {
+    waves.clear();
 }
 
 // Getters

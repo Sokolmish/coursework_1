@@ -4,17 +4,49 @@ layout(std430, binding = 0) writeonly buffer data0 {
     float heightMap[];
 };
 
+layout(binding = 1, std430) readonly buffer data1 {
+    float ws[];
+};
+
 uniform float meshSize;
 uniform float time;
+uniform int wavesCount;
 
 layout (local_size_x = 1, local_size_y = 1) in;
 
 void main() {
     ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
     uint baseIndex = (storePos.y * gl_NumWorkGroups.x + storePos.x) * 3;
+    
+    float res = 0;
+    for (int i = 0; i < wavesCount; i++) {
+        float dp = (ws[i * 7 + 0] * storePos.x + ws[i * 7 + 2] * storePos.y) * meshSize;
+        float S = (dp + ws[i * 7 + 5] * time) * ws[4];
+        res += ws[i * 7 + 3] * pow((sin(S) + 1) * 0.5, ws[i * 7 + 6]);
+    }
 
-    float S = (0.5 * storePos.x * meshSize + 0.5 * storePos.y * meshSize + 5.68 * time) * 0.19;
-    vec3 res = vec3(storePos.x * meshSize, 5 * pow((sin(S) + 1) * 0.5, 1.87), storePos.y * meshSize);
-    for (int i = 0; i < 3; i++)
-        heightMap[baseIndex + i] = res[i];
+    heightMap[baseIndex + 0] = storePos.x * meshSize;
+    heightMap[baseIndex + 1] = res;
+    heightMap[baseIndex + 2] = storePos.y * meshSize;
 }
+
+// for (auto &node : mesh.getNodes()) {
+//     float dx = 0;
+//     float dz = 0;
+//     static_cast<void>(dx);
+//     static_cast<void>(dz);
+
+//     node.pos.y = 0.f;
+//     for (const auto &w : waves) {
+//         float S = (w.dir.x * node.pos.x + w.dir.z * node.pos.z + w.velocity * t) * w.freq;
+//         node.pos.y += w.amp * powf((sinf(S) + 1.f) * .5f, w.stepness);
+        
+//         if constexpr (computeNormal) {
+//             float gradPart = w.amp * w.stepness * powf(.5f, w.stepness) * powf(sinf(S) + 1.f, w.stepness - 1) * cosf(S);
+//             dx += gradPart * w.dir.x;
+//             dz += gradPart * w.dir.z;
+//         }
+//     }
+//     if constexpr (computeNormal)
+//         node.norm = glm::normalize(glm::vec3(-dx, 1.f, -dz));
+// }

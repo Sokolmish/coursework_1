@@ -57,10 +57,17 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    cam.setPos(456, 138, 753);
-    cam.setViewDeg(104, -23);
+    cam.setPos(463, 138, 753);
+    cam.setViewDeg(84, -23);
 
     WaterMeshChunk mesh(512, 3.4f, 0, 0, 0);
+    mesh.addWaves({
+        Wave1(glm::vec3{ 1.f, 0.f, -0.18f },     3.78f, 0.19f, 4.98f, 1.87f),
+        Wave1(glm::vec3{ 0.5f, 0.f, 0.9f },      0.98f, 0.98f, 0.97f, 2.47f),
+        Wave1(glm::vec3{ -0.27f, 0.f, 0.14f },   1.81f, 0.91f, 0.12f, 3.92f),
+        Wave1(glm::vec3{ .15f, 0.f, 0.54f },     1.02f, 1.87f, 1.02f, 2.37f),
+    });
+
     DebugInformer debugger;
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
