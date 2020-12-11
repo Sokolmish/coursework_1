@@ -60,7 +60,7 @@ int main() {
     cam.setPos(833, 138, 874);
     cam.setViewDeg(84, -23);
 
-    WaterMeshChunk mesh(512, 3.4f, 0, 0, 0);
+    WaterMeshChunk mesh(512, 3.4f, 0, 0);
     mesh.addWaves({
         Wave2({ -1.f, 0.f, -0.18f }, 1.3f, 30.f, 0.f),
         Wave2({ -1.f, 0.f, +0.28f }, 0.3f, 9.f, 0.f),
@@ -70,7 +70,6 @@ int main() {
     DebugInformer debugger;
 
     glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
-
     if constexpr (disableVsync)
         glfwSwapInterval(0);
 

@@ -23,15 +23,13 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
 }
 
 
-WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
+WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     assert(wh > 0 && size > 1e-4f);
 
     this->offset = glm::vec3(xs * wh * size, 0.f, ys * wh * size);
-    //// wh += (wh % 2 == 0) ? 1 : 0; // Warning?
     this->width = wh;
     this->height = wh;
     this->size = size;
-    this->meshType = type;
 
     // EBO computation
     auto tElements = getElements();
@@ -82,7 +80,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int type, int xs, int ys) {
     // Shaders loading
     showShader = Shader("./shaders/water.vert", "./shaders/water.frag");
     physShader = Shader("./shaders/phys.comp");
-    normShader = Shader("./shaders/normc.comp");
+    normShader = Shader("./shaders/norm.comp");
 
     // Init debug
     txShader = Shader("./shaders/tx.vert", "./shaders/tx.frag");
@@ -223,18 +221,6 @@ float WaterMeshChunk::getSize() const {
     return this->size;
 }
 
-int WaterMeshChunk::getMeshType() const {
-    return this->meshType;
-}
-
 glm::vec3 WaterMeshChunk::getOffset() const {
     return offset;
-}
-
-std::pair<int, int> WaterMeshChunk::getChunkPos() const {
-    return std::pair<int, int>(posx, posz);
-}
-
-WaterMeshChunk::~WaterMeshChunk() {
-    // delete[] buff;
 }

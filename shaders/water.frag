@@ -44,5 +44,5 @@ void main() {
         vec3 specular = lIntensivity * (spec * mat.specular); //  * spotlight.col
 
         color = vec4(ambient + diffuse + specular, 1.0);
-    }   
+    }
 }
