@@ -100,11 +100,11 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        // if (!isFreeze)
+        if (!isFreeze)
             mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
-            glm::perspective(45.f, ratio, 0.01f, 250.f) *
+            glm::perspective(45.f, ratio, 0.1f, 500.f) *
             glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
             glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
             glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *

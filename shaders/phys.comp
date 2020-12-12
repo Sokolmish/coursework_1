@@ -22,14 +22,13 @@ void main() {
     ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
     uint baseIndex = (storePos.y * gl_NumWorkGroups.x + storePos.x) * 3;
 
-    // vec3 offset = vec3(0, 0, 0);
     float height = 0.0;
     for (int i = 0; i < wavesCount; i++) {
         int cbs = i * 7;
 
         vec2 k = vec2(ws[cbs + 0], ws[cbs + 2]);
         float dp = dot(k, vec2(storePos)) * meshSize;
-        float Re = ws[cbs + 5] * cos(dp) + ws[cbs + 6] * sin(dp);
+        float Re = ws[cbs + 5] * cos(dp) - ws[cbs + 6] * sin(dp);
         height += Re;
     }
 

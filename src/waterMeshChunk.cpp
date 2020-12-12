@@ -1,4 +1,5 @@
 #include "../include/waterMeshChunk.hpp"
+#include "../include/util/image.hpp"
 #include <cassert>
 #include <math.h>
 #include <iostream>
@@ -6,6 +7,7 @@
 using namespace std::complex_literals;
 
 static constexpr bool useTrueRandom = false;
+static uint rseed = 3907355480; // 3060
 
 template<class T>
 inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
@@ -36,13 +38,11 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     this->size = size;
 
     if constexpr(useTrueRandom) {
-        auto rd = (std::random_device())();
-        std::cout << "Rd = " << rd << std::endl;
-        gen = std::mt19937(rd);
+        rseed = (std::random_device())();
+        std::cout << "Rd = " << rseed << std::endl;
     }
-    else
-        gen = std::mt19937(3060);
-    dis = std::uniform_real_distribution<float>(-1.f, 1.f);
+    gen = std::mt19937(rseed);
+    dis = std::normal_distribution<float>(0.f, 1.f);
 
     // EBO computation
     auto tElements = getElements();
@@ -177,7 +177,7 @@ void WaterMeshChunk::computePhysics(float absTime) const {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, wavesBuffID);
     glDispatchCompute(width, height, 1);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS); // GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     normShader.use();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);

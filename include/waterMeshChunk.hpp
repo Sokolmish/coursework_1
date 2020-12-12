@@ -32,7 +32,7 @@ private:
     float windSpeed;
 
     mutable std::mt19937 gen; // Standard mersenne twister engine
-    mutable std::uniform_real_distribution<float> dis;
+    mutable std::normal_distribution<float> dis;
 
     Shader showShader;
     Shader physShader, normShader;
