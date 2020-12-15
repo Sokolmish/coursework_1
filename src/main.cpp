@@ -60,7 +60,7 @@ int main() {
     cam.setPos(833, 138, 874);
     cam.setViewDeg(84, -23);
 
-    WaterMeshChunk mesh(256, 3.9f, 0, 0);
+    WaterMeshChunk mesh(256, 5.f, 0, 0);
     mesh.addWaves({
         Wave2({ -1.f, 0.f, -0.18f }, 0.4f, 30.f),
         Wave2({ -1.f, 0.f, +0.48f }, 0.18f, 9.f),
@@ -101,7 +101,7 @@ int main() {
 
         move(window, dt);
         // if (!isFreeze)
-        //     mesh.computePhysics(timePhys);
+            mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.1f, 500.f) *
@@ -113,7 +113,7 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
-        mesh.showDebugImage(m_ortho, timePhys);
+        // mesh.showDebugImage(m_ortho, timePhys);
         mesh.show(m_proj_view, isMesh, cam);
 
         debugger.setPos(cam.pos);

@@ -3,7 +3,9 @@
 layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (binding = 0, rgba32f) uniform readonly image2D hMap;
-layout (binding = 1, std430) writeonly buffer data0 {
+layout (binding = 1, rgba32f) uniform readonly image2D xMap;
+layout (binding = 2, rgba32f) uniform readonly image2D zMap;
+layout (binding = 3, std430) writeonly buffer data0 {
     float hBuff[];
 };
 
@@ -12,8 +14,7 @@ uniform float meshSize;
 void main() {
     ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
     uint baseIndex = (storePos.y * gl_NumWorkGroups.x + storePos.x) * 3;
-    vec4 col = imageLoad(hMap, storePos);
-    hBuff[baseIndex + 0] = storePos.x * meshSize;
-    hBuff[baseIndex + 1] = col.r;
-    hBuff[baseIndex + 2] = storePos.y * meshSize;
+    hBuff[baseIndex + 0] = storePos.x * meshSize - imageLoad(xMap, storePos).r;
+    hBuff[baseIndex + 1] = imageLoad(hMap, storePos).r;
+    hBuff[baseIndex + 2] = storePos.y * meshSize - imageLoad(zMap, storePos).r;
 }

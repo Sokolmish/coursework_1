@@ -40,7 +40,7 @@ private:
     
     int logN;
     Shader h0Shader, htShader, buttShader, fourShader, convShader;
-    GLuint xiTex, h0Tex, htHeighTex, htDisplTex, buttTex, ppTex, resTex;
+    GLuint xiTex, h0Tex, htHeighTex, htxTex, htzTex, buttTex, ppTex, resHTex, resXTex, resZTex;
 
     // Debug
     GLuint debugVAO, debugVBO;
@@ -48,6 +48,7 @@ private:
 
     std::vector<std::pair<int, int> > getElements() const;
     void fillWavesBuff() const;
+    void ifft(GLuint src, GLuint dst) const;
 
     GLuint loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const;
     GLuint generateGaussTexture(int width, int height) const;

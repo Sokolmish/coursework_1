@@ -8,7 +8,8 @@ layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (binding = 0, rgba32f) uniform readonly image2D h0Map;
 layout (binding = 1, rgba32f) uniform writeonly image2D htHeigh;
-layout (binding = 2, rgba32f) uniform writeonly image2D htDispl;
+layout (binding = 2, rgba32f) uniform writeonly image2D htx;
+layout (binding = 3, rgba32f) uniform writeonly image2D htz;
 
 uniform float L;
 uniform int N;
@@ -53,5 +54,6 @@ void main() {
     compl dz = mul(tdz, dy);
 
     imageStore(htHeigh, ivec2(gl_GlobalInvocationID.xy), vec4(dy.Re, dy.Im, 0, 1));
-    imageStore(htDispl, ivec2(gl_GlobalInvocationID.xy), vec4(dx.Re, dx.Im, dz.Re, dz.Im));
+    imageStore(htx, ivec2(gl_GlobalInvocationID.xy), vec4(dx.Re, dx.Im, 0, 1));
+    imageStore(htz, ivec2(gl_GlobalInvocationID.xy), vec4(dz.Re, dz.Im, 0, 1));
 }
