@@ -19,7 +19,7 @@ uniform float windSpeed;
 vec4 gaussRND() {
     vec4 noise = imageLoad(xiTex, ivec2(gl_GlobalInvocationID.xy));
     for (int i = 0; i < 4; i++)
-        noise[i] = clamp(noise[i], 0.0001, 1.0); //clamp(noise[i], 0.001, 1.0);
+        noise[i] = clamp(noise[i], 0.0001, 1.0);
     float v0 = 2.0 * M_PI * noise.x;
     float u0 = sqrt(-2.0 * log(noise.y));
     float u1 = 2.0 * M_PI * noise.z;
@@ -39,17 +39,14 @@ void main() {
     float h0k = clamp(sqrt(Amp / (magSq * magSq)
         * pow(abs(dot(normalize(k), normalize(windDir.xz))), 6.0)
         * exp(-1.0 / (magSq * L_ * L_)))
-        * exp(-magSq * pow(L / 2000.0, 2.0))
         * M_SQRT1_2, -4000.0, 4000.0);
 
     float h0minusk = clamp(sqrt((Amp / (magSq * magSq))
         * pow(abs(dot(normalize(-k), normalize(windDir.xz))), 6.0)
         * exp(-1.0 / (magSq * L_ * L_)))
-        * exp(-magSq * pow(L / 2000.0, 2.0))
         * M_SQRT1_2, -4000.0, 4000.0);
 
     vec4 gauss_random = gaussRND();
-    // vec4 gauss_random = imageLoad(xiTex, ivec2(gl_GlobalInvocationID.xy));
 
     vec4 res = vec4(gauss_random.xy * h0k, gauss_random.zw * h0minusk);
     imageStore(h0Map, ivec2(gl_GlobalInvocationID.xy), res);

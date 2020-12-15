@@ -8,23 +8,31 @@ layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (binding = 0, rgba32f) uniform readonly image2D pp0;
 layout (binding = 1, rgba32f) uniform readonly image2D pp1;
-layout (binding = 2, rgba32f) uniform writeonly image2D disp;
+// layout (binding = 2, rgba32f) uniform writeonly image2D disp;
+layout (binding = 2, std430) writeonly buffer data0 {
+    float buff[];
+};
 
 uniform int pp;
 uniform int N;
+uniform int buffPos;
+uniform float meshSize;
 
 void main() {
     ivec2 x = ivec2(gl_GlobalInvocationID.xy);
     float perms[] = { 1.0, -1.0 };
     int index = int(mod((int(x.x + x.y)), 2));
-    if (pp == 0) {
-        float h = imageLoad(pp0, x).r;
-        float grsc = perms[index] * (h / float(N * N));
-        imageStore(disp, x, vec4(grsc, grsc, grsc, 1.0));
-    }
-    else {
-        float h = imageLoad(pp1, x).r;
-        float grsc = perms[index] * (h / float(N * N));
-        imageStore(disp, x, vec4(grsc, grsc, grsc, 1.0));
-    }
+    float h;
+    if (pp == 0)
+        h = imageLoad(pp0, x).r;
+    else 
+        h = imageLoad(pp1, x).r;
+    float grsc = perms[index] * (h / float(N * N));
+    // imageStore(disp, x, vec4(grsc, grsc, grsc, 1.0)); 
+    if (buffPos == 0)
+        buff[(x.y * gl_NumWorkGroups.x + x.x) * 3 + 0] = x.x * meshSize - grsc;
+    else if (buffPos == 1)
+        buff[(x.y * gl_NumWorkGroups.x + x.x) * 3 + 1] = grsc;
+    else // if (buffPos == 2)
+        buff[(x.y * gl_NumWorkGroups.x + x.x) * 3 + 2] = x.y * meshSize - grsc;
 }

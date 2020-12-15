@@ -25,13 +25,11 @@ private:
 
     GLuint vao, vbo, ebo;
     GLuint normalMapID;
-    GLuint wavesBuffID;
 
-    std::vector<Wave2> waves;
     glm::vec3 windDir;
     float windSpeed;
 
-    typedef std::normal_distribution<float> rand_distrib; //uniform_real_distribution<float>
+    typedef std::normal_distribution<float> rand_distrib; // uniform_real_distribution<float>
     mutable std::mt19937 gen; // Standard mersenne twister engine
     mutable rand_distrib dis;
 
@@ -39,16 +37,18 @@ private:
     Shader physShader, normShader;
     
     int logN;
-    Shader h0Shader, htShader, buttShader, fourShader, convShader;
-    GLuint xiTex, h0Tex, htHeighTex, htxTex, htzTex, buttTex, ppTex, resHTex, resXTex, resZTex;
+    Shader h0Shader, htShader, buttShader, fourShader, perlinShader;
+    GLuint h0Tex, buttTex, perlinTex;
+    GLuint htHTex, htxTex, htzTex, ppTex;
 
     // Debug
     GLuint debugVAO, debugVBO;
     Shader txShader;
 
     std::vector<std::pair<int, int> > getElements() const;
-    void fillWavesBuff() const;
-    void ifft(GLuint src, GLuint dst) const;
+    void initDebug();
+    void initTextures();
+    void ifft(GLuint src, int bPos) const;
 
     GLuint loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const;
     GLuint generateGaussTexture(int width, int height) const;
@@ -57,10 +57,6 @@ private:
 
 public:
     WaterMeshChunk(int wh, float size, int xs, int ys);
-
-    void addWave(const Wave2 &w);
-    void addWaves(const std::initializer_list<Wave2> &ws);
-    void clearWaves();
 
     void computePhysics(float absTime) const;
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
@@ -72,6 +68,8 @@ public:
     int getHeight() const;
     float getSize() const;
     glm::vec3 getOffset() const;
+
+    void update();
 };
 
 #endif

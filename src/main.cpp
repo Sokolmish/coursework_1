@@ -61,12 +61,8 @@ int main() {
     cam.setViewDeg(84, -23);
 
     WaterMeshChunk mesh(256, 5.f, 0, 0);
-    mesh.addWaves({
-        Wave2({ -1.f, 0.f, -0.18f }, 0.4f, 30.f),
-        Wave2({ -1.f, 0.f, +0.48f }, 0.18f, 9.f),
-        Wave2({ -1.f, 0.f, +0.14f }, 0.07f, 26.f),
-    });
     mesh.setWind({ 1.f, 0.f, 0.f }, 80.f);
+    mesh.update();
 
     DebugInformer debugger;
 
