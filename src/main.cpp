@@ -19,7 +19,7 @@
 
 // Config
 
-static constexpr float coeffMovement = 19.0f;
+static constexpr float coeffMovement = 49.0f;
 static constexpr float coeffCameraKeyboard = 1.4f;
 static constexpr float coeffCameraMouse = 0.6f;
 
@@ -60,13 +60,13 @@ int main() {
     cam.setPos(833, 138, 874);
     cam.setViewDeg(84, -23);
 
-    WaterMeshChunk mesh(512, 3.4f, 0, 0);
+    WaterMeshChunk mesh(256, 3.9f, 0, 0);
     mesh.addWaves({
         Wave2({ -1.f, 0.f, -0.18f }, 0.4f, 30.f),
         Wave2({ -1.f, 0.f, +0.48f }, 0.18f, 9.f),
         Wave2({ -1.f, 0.f, +0.14f }, 0.07f, 26.f),
     });
-    mesh.setWind({ -1.f, 0, 0.04 }, 3.5f);
+    mesh.setWind({ 1.f, 0.f, 0.f }, 80.f);
 
     DebugInformer debugger;
 
@@ -100,8 +100,8 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        if (!isFreeze)
-            mesh.computePhysics(timePhys);
+        // if (!isFreeze)
+        //     mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
             glm::perspective(45.f, ratio, 0.1f, 500.f) *
@@ -113,8 +113,8 @@ int main() {
             glm::translate(glm::mat4(1.f), -cam.pos);
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
+        mesh.showDebugImage(m_ortho, timePhys);
         mesh.show(m_proj_view, isMesh, cam);
-        // mesh.showDebugImage(m_ortho, timePhys);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);

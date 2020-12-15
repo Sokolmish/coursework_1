@@ -3,10 +3,11 @@
 #include <cassert>
 #include <math.h>
 #include <iostream>
+#include "../include/util/utility.hpp"
 
 using namespace std::complex_literals;
 
-static constexpr bool useTrueRandom = false;
+static constexpr bool useTrueRandom = true;
 static uint rseed = 3907355480; // 3060
 
 template<class T>
@@ -18,7 +19,6 @@ inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
 
 std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
     std::vector<std::pair<int, int> > tElements;
-    // TODO: downsampling
     for (int zz = 0; zz < height - 1; zz++) {
         for (int xx = 0; xx < width - 1; xx++) {
             push_tr(tElements, { xx, zz }, { xx + 1, zz }, { xx + 1, zz + 1 });
@@ -42,7 +42,7 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
         std::cout << "Rd = " << rseed << std::endl;
     }
     gen = std::mt19937(rseed);
-    dis = std::normal_distribution<float>(0.f, 1.f);
+    dis = rand_distrib(0.f, 1.f);
 
     // EBO computation
     auto tElements = getElements();
@@ -95,19 +95,35 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     physShader = Shader("./shaders/phys.comp");
     normShader = Shader("./shaders/norm.comp");
 
+    logN = log2i(width);
+    h0Shader = Shader("./shaders/h0.comp");
+    htShader = Shader("./shaders/ht.comp");
+    buttShader = Shader("./shaders/butt.comp");
+    fourShader = Shader("./shaders/fourier.comp");
+    convShader = Shader("./shaders/conv.comp");
+    xiTex = generateGaussTexture(width, height);
+    h0Tex = generateEmptyTexture(width, height, GL_FLOAT);
+    htHeighTex = generateEmptyTexture(width, height, GL_FLOAT);
+    htDisplTex = generateEmptyTexture(width, height, GL_FLOAT);
+    buttTex = generateButterflyTexture(width);
+    ppTex = generateEmptyTexture(width, height, GL_FLOAT);
+    resTex = generateEmptyTexture(width, height, GL_FLOAT);
+
     // Init debug
-    txShader = Shader("./shaders/tx.vert", "./shaders/tx.frag");
-    GLfloat vertices[12][4] = {
-        { 0, 300, 0, 0 }, { 0, 0,   0, 1 }, { 300, 0,   1, 1 },
-        { 0, 300, 0, 0 }, { 300, 0, 1, 1 }, { 300, 300, 1, 0 },
-        { 500, 300, 0, 0 }, { 500, 0, 0, 1 }, { 800, 0, 1, 1 },
-        { 500, 300, 0, 0 }, { 800, 0, 1, 1 }, { 800, 300, 1, 0 }
+    txShader = Shader("./shaders/tx.vert", "./shaders/tx.frag"); // sht
+    GLfloat vertices[18][4] = {
+        { 0, 300, 0, 1 }, { 0, 0,   0, 0 }, { 300, 0,   1, 0 },
+        { 0, 300, 0, 1 }, { 300, 0, 1, 0 }, { 300, 300, 1, 1 },
+        { 500, 300, 0, 1 }, { 500, 0, 0, 0 }, { 800, 0, 1, 0 },
+        { 500, 300, 0, 1 }, { 800, 0, 1, 0 }, { 800, 300, 1, 1 },
+        { 0, 600, 0, 1 }, { 0,   0, 0, 0 }, { 900, 0, 1, 0 },
+        { 0, 600, 0, 1 }, { 900, 0, 1, 0 }, { 900, 600, 1, 1 }
     };
     glGenVertexArrays(1, &debugVAO);
     glGenBuffers(1, &debugVBO);
     glBindVertexArray(debugVAO);
     glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 12 * 4, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 18 * 4, vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
     glBindVertexArray(0);
@@ -157,19 +173,86 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 }
 
 void WaterMeshChunk::showDebugImage(const glm::mat4 &m_ortho, float time) const {
-    txShader.use();
-    txShader.setUniform("projection", m_ortho);
-    txShader.setUniform("tex", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(debugVAO);
-    glBindTexture(GL_TEXTURE_2D, normalMapID);
-    glDrawArrays(GL_TRIANGLES, 6, 6);
-    glBindVertexArray(0);
+    h0Shader.use();
+    h0Shader.setUniform("L", width * size);
+    h0Shader.setUniform("N", width);
+    h0Shader.setUniform("Amp", 400.f);
+    h0Shader.setUniform("windDir", windDir);
+    h0Shader.setUniform("windSpeed", windSpeed);
+    glBindImageTexture(0, xiTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, h0Tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glDispatchCompute(width, height, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    htShader.use();
+    htShader.setUniform("L", width * size);
+    htShader.setUniform("N", width);
+    htShader.setUniform("time", time);
+    glBindImageTexture(0, h0Tex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, htHeighTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindImageTexture(2, htDisplTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glDispatchCompute(width, height, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    // TODO: htDisplTex
+
+    int pp = 0;
+    buttShader.use();
+    buttShader.setUniform("dir", (int)0);
+    glBindImageTexture(0, buttTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, htHeighTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, ppTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    for (int i = 0; i < logN; i++) {
+        buttShader.setUniform("stage", (int)i);
+        buttShader.setUniform("pp", (int)pp);
+        glDispatchCompute(width, height, 1);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        pp = 1 - pp;
+    }
+    buttShader.setUniform("dir", (int)1);
+    for (int i = 0; i < logN; i++) {
+        buttShader.setUniform("stage", i);
+        buttShader.setUniform("pp", pp);
+        glDispatchCompute(width, height, 1);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        pp = 1 - pp;
+    }
+
+    fourShader.use();
+    fourShader.setUniform("pp", pp);
+    fourShader.setUniform("N", width);
+    glBindImageTexture(0, htHeighTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, ppTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(2, resTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glDispatchCompute(width, height, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    convShader.use();
+    convShader.setUniform("meshSize", size);
+    glBindImageTexture(0, resTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo);
+    glDispatchCompute(width, height, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    // txShader.use();
+    // txShader.setUniform("projection", m_ortho);
+    // txShader.setUniform("tex", 0);
+    // glBindVertexArray(debugVAO);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, htHeighTex);
+    // glDrawArrays(GL_TRIANGLES, 0, 6);
+    // glBindTexture(GL_TEXTURE_2D, resTex);
+    // glDrawArrays(GL_TRIANGLES, 6, 6);
+    // glBindVertexArray(0);
+
+    normShader.use();
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);
+    glBindImageTexture(1, normalMapID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glDispatchCompute(width, height, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
 void WaterMeshChunk::computePhysics(float absTime) const {
-    fillWavesBuff(absTime);
-
     physShader.use();
     physShader.setUniform("time", absTime);
     physShader.setUniform("meshSize", size);
@@ -186,22 +269,19 @@ void WaterMeshChunk::computePhysics(float absTime) const {
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
-void WaterMeshChunk::fillWavesBuff(float absTime) const {
+void WaterMeshChunk::fillWavesBuff() const {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, wavesBuffID);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 7, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * waves.size() * 6, nullptr, GL_STATIC_DRAW);
     GLfloat *ptr = static_cast<GLfloat*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
 
     uint ind = 0;
     for (const auto &w : waves) {
-        auto coeff = w.second * exp(1if * w.first.w * absTime) + conj(w.second * exp(-1if * w.first.w * absTime));
-
-        ptr[ind++] = w.first.dir.x; // 0
-        ptr[ind++] = w.first.dir.y; // 1
-        ptr[ind++] = w.first.dir.z; // 2
-        ptr[ind++] = w.first.A;     // 3
-        ptr[ind++] = w.first.w;     // 4
-        ptr[ind++] = coeff.real();  // 5
-        ptr[ind++] = coeff.imag();  // 6
+        ptr[ind++] = w.dir.x; // 0
+        ptr[ind++] = w.dir.y; // 1
+        ptr[ind++] = w.dir.z; // 2
+        ptr[ind++] = w.A;     // 3
+        ptr[ind++] = w.w;     // 4
+        ptr[ind++] = w.k;     // 5
     }
 
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -210,24 +290,15 @@ void WaterMeshChunk::fillWavesBuff(float absTime) const {
 
 // Waves
 
-std::complex<float> WaterMeshChunk::computeH0(const Wave2 &w) const {
-    float cosphi = glm::dot(windDir, glm::normalize(w.dir));
-    float L = windSpeed * windSpeed / 9.81f;
-    float Ph = w.A * cosphi * cosphi / (w.k * w.k * w.k * w.k) * expf(-1.f / (w.k * L));
-    float xi_re = dis(gen);
-    float xi_im = dis(gen);
-    return (float)M_SQRT1_2 * (xi_re + 1if * xi_im) * sqrtf(Ph);
-}
-
 void WaterMeshChunk::addWave(const Wave2 &w) {
-    waves.push_back({ w, computeH0(w) });
-    // fillWavesBuff();
+    waves.push_back(w);
+    fillWavesBuff();
 }
 
 void WaterMeshChunk::addWaves(const std::initializer_list<Wave2> &ws) {
     for (const auto &w : ws)
-        waves.push_back({ w, computeH0(w) });
-    // fillWavesBuff();
+        waves.push_back(w);
+    fillWavesBuff();
 }
 
 void WaterMeshChunk::clearWaves() {
@@ -237,9 +308,112 @@ void WaterMeshChunk::clearWaves() {
 void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
     windDir = glm::normalize(dir);
     windSpeed = speed;
-    for (auto &w : waves)
-        w = { w.first, computeH0(w.first) };
-    // fillWavesBuff();
+}
+
+// Texture generators
+
+GLuint WaterMeshChunk::generateGaussTexture(int width, int height) const {
+    GLfloat *buff = new GLfloat[width * height * 4];
+    for (int j = 0; j < width * height * 4; j++)
+        buff[j] = dis(gen);
+    
+    GLuint id;    
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, buff);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    delete[] buff;
+    return id;
+}
+
+GLuint WaterMeshChunk::loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const {
+    ImageRGB img = ImageRGB::fromFile(path);
+    GLuint id;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.getWidth(), img.getHeight(), 0,
+                    GL_RGB, GL_UNSIGNED_BYTE, img.getData());
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return id;
+}
+
+GLuint WaterMeshChunk::generateEmptyTexture(int width, int height, GLenum type) const {
+    GLuint id;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, type, nullptr);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return id;
+}
+
+GLuint WaterMeshChunk::generateButterflyTexture(int N) const {
+    int logN = log2i(N);
+
+    GLfloat *buff = new GLfloat[N * logN * 4];
+    for (int x = 0; x < logN; x++) {
+        for (int y = 0; y < N; y++) {
+            float k = fmodf(y * ((float)N / (float)(1 << (x + 1))), N);
+            float twiddleRe = cosf(2.f * M_PI * k / (float) N);
+            float twiddleIm = sinf(2.f * M_PI * k / (float) N);
+            int bSpan = 1 << x;
+            bool bWing = fmodf(y, 1 << (x + 1)) < (1 << x);
+
+            if (x == 0) {
+                if (bWing) {
+                    buff[((y * logN) + x) * 4 + 0] = twiddleRe;
+                    buff[((y * logN) + x) * 4 + 1] = twiddleIm;
+                    buff[((y * logN) + x) * 4 + 2] = reverseBits(y, logN);
+                    buff[((y * logN) + x) * 4 + 3] = reverseBits(y + 1, logN);
+                }
+                else {
+                    buff[((y * logN) + x) * 4 + 0] = twiddleRe;
+                    buff[((y * logN) + x) * 4 + 1] = twiddleIm;
+                    buff[((y * logN) + x) * 4 + 2] = reverseBits(y - 1, logN);
+                    buff[((y * logN) + x) * 4 + 3] = reverseBits(y, logN);
+                }
+            }
+            else {
+                if (bWing) {
+                    buff[((y * logN) + x) * 4 + 0] = twiddleRe;
+                    buff[((y * logN) + x) * 4 + 1] = twiddleIm;
+                    buff[((y * logN) + x) * 4 + 2] = y;
+                    buff[((y * logN) + x) * 4 + 3] = y + bSpan;
+                }
+                else {
+                    buff[((y * logN) + x) * 4 + 0] = twiddleRe;
+                    buff[((y * logN) + x) * 4 + 1] = twiddleIm;
+                    buff[((y * logN) + x) * 4 + 2] = y - bSpan;
+                    buff[((y * logN) + x) * 4 + 3] = y;
+                }
+            }
+        }
+    }
+    
+    GLuint id;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, logN, N, 0, GL_RGBA, GL_FLOAT, buff);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    delete[] buff;
+    return id;
 }
 
 // Getters

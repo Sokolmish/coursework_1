@@ -1,0 +1,69 @@
+#version 430 core
+
+#define M_PI 3.14159265358979323846
+#define M_1_PI 0.318309886183790671538
+#define M_SQRT1_2 0.707106781186547524401
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout (binding = 0, rgba32f) uniform readonly image2D butterfly;
+layout (binding = 1, rgba32f) uniform image2D pp0;
+layout (binding = 2, rgba32f) uniform image2D pp1;
+
+uniform int stage;
+uniform int pp;
+uniform int dir;
+
+struct compl {
+    float Re, Im;
+};
+compl mul(compl lhs, compl rhs) {
+    return compl(lhs.Re * rhs.Re - lhs.Im * rhs.Im, lhs.Re * rhs.Im + lhs.Im * rhs.Re);
+}
+compl add(compl lhs, compl rhs) {
+    return compl(lhs.Re + rhs.Re, lhs.Im + rhs.Im);
+}
+
+void main() {
+    ivec2 x = ivec2(gl_GlobalInvocationID.xy);
+    if (dir == 0) {
+        vec4 data = imageLoad(butterfly, ivec2(stage, x.x));
+        vec2 p1, p2;
+        if (pp == 0) {
+            p1 = imageLoad(pp0, ivec2(data.z, x.y)).rg;
+            p2 = imageLoad(pp0, ivec2(data.w, x.y)).rg;
+        }
+        else {
+            p1 = imageLoad(pp1, ivec2(data.z, x.y)).rg;
+            p2 = imageLoad(pp1, ivec2(data.w, x.y)).rg;
+        }
+        compl p = compl(p1.x, p1.y);
+        compl q = compl(p2.x, p2.y);
+        compl w = compl(data.x, data.y);
+        compl H = add(p, mul(w, q));
+        if (pp == 0)
+            imageStore(pp1, x, vec4(H.Re, H.Im, 0, 1));
+        else
+            imageStore(pp0, x, vec4(H.Re, H.Im, 0, 1));
+    }
+    else {
+        vec4 data = imageLoad(butterfly, ivec2(stage, x.y));
+        vec2 p1, p2;
+        if (pp == 0) {
+            p1 = imageLoad(pp0, ivec2(x.x, data.z)).rg;
+            p2 = imageLoad(pp0, ivec2(x.x, data.w)).rg;
+        }
+        else {
+            p1 = imageLoad(pp1, ivec2(x.x, data.z)).rg;
+            p2 = imageLoad(pp1, ivec2(x.x, data.w)).rg;
+        }
+        compl p = compl(p1.x, p1.y);
+        compl q = compl(p2.x, p2.y);
+        compl w = compl(data.x, data.y);
+        compl H = add(p, mul(w, q));
+        if (pp == 0)
+            imageStore(pp1, x, vec4(H.Re, H.Im, 0, 1));
+        else
+            imageStore(pp0, x, vec4(H.Re, H.Im, 0, 1));
+    }
+}

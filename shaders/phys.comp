@@ -29,7 +29,8 @@ void main() {
         vec2 k = vec2(ws[cbs + 0], ws[cbs + 2]);
         float dp = dot(k, vec2(storePos)) * meshSize;
         float Re = ws[cbs + 5] * cos(dp) - ws[cbs + 6] * sin(dp);
-        height += Re;
+        float Im = ws[cbs + 5] * sin(dp) + ws[cbs + 6] * cos(dp);
+        height += Re + Im;
     }
 
     heightMap[baseIndex + 0] = storePos.x * meshSize;

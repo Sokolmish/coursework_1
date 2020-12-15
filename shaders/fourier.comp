@@ -1,0 +1,30 @@
+#version 430 core
+
+#define M_PI 3.14159265358979323846
+#define M_1_PI 0.318309886183790671538
+#define M_SQRT1_2 0.707106781186547524401
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout (binding = 0, rgba32f) uniform readonly image2D pp0;
+layout (binding = 1, rgba32f) uniform readonly image2D pp1;
+layout (binding = 2, rgba32f) uniform writeonly image2D disp;
+
+uniform int pp;
+uniform int N;
+
+void main() {
+    ivec2 x = ivec2(gl_GlobalInvocationID.xy);
+    float perms[] = { 1.0, -1.0 };
+    int index = int(mod((int(x.x + x.y)), 2));
+    if (pp == 0) {
+        float h = imageLoad(pp0, x).r;
+        float grsc = perms[index] * (h / float(N * N));
+        imageStore(disp, x, vec4(grsc, grsc, grsc, 1.0));
+    }
+    else {
+        float h = imageLoad(pp1, x).r;
+        float grsc = perms[index] * (h / float(N * N));
+        imageStore(disp, x, vec4(grsc, grsc, grsc, 1.0));
+    }
+}

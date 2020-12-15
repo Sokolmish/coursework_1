@@ -5,5 +5,5 @@ in vec2 TexCoords;
 out vec4 color;
 
 void main() {
-    color = texture(tex, TexCoords);
+    color = vec4(texture(tex, TexCoords).xyz / 1.0, 1);
 }

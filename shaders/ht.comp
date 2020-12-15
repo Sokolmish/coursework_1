@@ -1,0 +1,57 @@
+#version 430 core
+
+#define M_PI 3.14159265358979323846
+#define M_1_PI 0.318309886183790671538
+#define M_SQRT1_2 0.707106781186547524401
+
+layout (local_size_x = 1, local_size_y = 1) in;
+
+layout (binding = 0, rgba32f) uniform readonly image2D h0Map;
+layout (binding = 1, rgba32f) uniform writeonly image2D htHeigh;
+layout (binding = 2, rgba32f) uniform writeonly image2D htDispl;
+
+uniform float L;
+uniform int N;
+uniform float time;
+
+struct compl {
+    float Re, Im;
+};
+compl mul(compl lhs, compl rhs) {
+    return compl(lhs.Re * rhs.Re - lhs.Im * rhs.Im, lhs.Re * rhs.Im + lhs.Im * rhs.Re);
+}
+compl add(compl lhs, compl rhs) {
+    return compl(lhs.Re + rhs.Re, lhs.Im + rhs.Im);
+}
+compl conj(compl x) {
+    return compl(x.Re, -x.Im);
+}
+
+void main() {
+    vec2 x = ivec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
+    vec2 k = vec2(2.0 * M_PI * x.x / L, 2.0 * M_PI * x.y / L);
+    float mag = length(k);
+    if (mag < 0.00001)
+        mag = 0.00001;
+    
+    float w = sqrt(9.81 * mag);
+
+    vec4 h0 = imageLoad(h0Map, ivec2(gl_GlobalInvocationID.xy));
+    compl fc1 = compl(h0.x, h0.y);
+    compl fc2 = conj(compl(h0.z, h0.w));
+
+    float coswt = cos(w * time);
+    float sinwt = sin(w * time);
+
+    compl expPos = compl(coswt, sinwt);
+    compl expInv = compl(coswt, -sinwt);
+
+    compl dy = add(mul(fc1, expPos), mul(fc2, expInv));
+    compl tdx = compl(0.0, -k.x / mag);
+    compl tdz = compl(0.0, -k.y / mag);
+    compl dx = mul(tdx, dy);
+    compl dz = mul(tdz, dy);
+
+    imageStore(htHeigh, ivec2(gl_GlobalInvocationID.xy), vec4(dy.Re, dy.Im, 0, 1));
+    imageStore(htDispl, ivec2(gl_GlobalInvocationID.xy), vec4(dx.Re, dx.Im, dz.Re, dz.Im));
+}

@@ -27,23 +27,32 @@ private:
     GLuint normalMapID;
     GLuint wavesBuffID;
 
-    std::vector<std::pair<Wave2, std::complex<float> > > waves;
+    std::vector<Wave2> waves;
     glm::vec3 windDir;
     float windSpeed;
 
+    typedef std::normal_distribution<float> rand_distrib; //uniform_real_distribution<float>
     mutable std::mt19937 gen; // Standard mersenne twister engine
-    mutable std::normal_distribution<float> dis;
+    mutable rand_distrib dis;
 
     Shader showShader;
     Shader physShader, normShader;
+    
+    int logN;
+    Shader h0Shader, htShader, buttShader, fourShader, convShader;
+    GLuint xiTex, h0Tex, htHeighTex, htDisplTex, buttTex, ppTex, resTex;
 
     // Debug
     GLuint debugVAO, debugVBO;
     Shader txShader;
 
     std::vector<std::pair<int, int> > getElements() const;
-    void fillWavesBuff(float absTime) const;
-    std::complex<float> computeH0(const Wave2 &w) const;
+    void fillWavesBuff() const;
+
+    GLuint loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const;
+    GLuint generateGaussTexture(int width, int height) const;
+    GLuint generateEmptyTexture(int width, int height, GLenum type) const;
+    GLuint generateButterflyTexture(int N) const;
 
 public:
     WaterMeshChunk(int wh, float size, int xs, int ys);

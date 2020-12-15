@@ -37,4 +37,21 @@ std::ostream& operator<<(std::ostream &os, const glm::vec2 &v);
 std::ostream& operator<<(std::ostream &os, const glm::vec3 &v);
 std::ostream& operator<<(std::ostream &os, const glm::vec4 &v);
 
+inline int reverseBits(int x, int N) {
+    int rev = 0;
+    for (int i = 0; i < N; i++)
+        if (((1 << i) & x) != 0)
+            rev |= (1 << (N - i - 1));
+    return rev;
+}
+
+inline int log2i(int x) {
+    int logx = 0;
+    for (int i = 31; i >= 0; i--) {
+        if ((x & (1 << i)) != 0)
+            logx = i;
+    }
+    return logx;
+}
+
 #endif
