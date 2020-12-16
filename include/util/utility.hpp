@@ -61,4 +61,14 @@ inline void configGlTexture(GLenum wrap, GLenum filter) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
 }
 
+inline glm::vec4 gaussRand(glm::vec4 rnd) {
+    for (int i = 0; i < 4; i++)
+        rnd[i] = std::min(std::max(rnd[i], 1e-4f), 1.f);
+    float v0 = 2.0 * M_PI * rnd.x;
+    float u0 = sqrtf(-2.0 * logf(rnd.y));
+    float u1 = 2.0 * M_PI * rnd.z;
+    float v1 = sqrtf(-2.0 * logf(rnd.w));
+    return glm::vec4(v0 * cosf(u0), v0 * sinf(u0), v1 * cosf(u1), v1 * sinf(u1));
+}
+
 #endif

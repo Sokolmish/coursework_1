@@ -8,7 +8,6 @@
 
 #include "util/shader.hpp"
 #include "util/camera.hpp"
-#include "wave2.hpp"
 
 #include <vector>
 #include <initializer_list>
@@ -28,16 +27,17 @@ private:
 
     glm::vec3 windDir;
     float windSpeed;
+    float amplitude;
 
     typedef std::normal_distribution<float> rand_distrib; // uniform_real_distribution<float>
     mutable std::mt19937 gen; // Standard mersenne twister engine
     mutable rand_distrib dis;
 
     Shader showShader;
-    Shader physShader, normShader;
-    
+    Shader normShader;
+
     int logN;
-    Shader h0Shader, htShader, buttShader, fourShader, perlinShader;
+    Shader htShader, buttShader, fourShader, perlinShader;
     GLuint h0Tex, buttTex, perlinTex;
     GLuint htHTex, htxTex, htzTex, ppTex;
 
@@ -51,9 +51,9 @@ private:
     void ifft(GLuint src, int bPos) const;
 
     GLuint loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const;
-    GLuint generateGaussTexture(int width, int height) const;
     GLuint generateEmptyTexture(int width, int height, GLenum type) const;
     GLuint generateButterflyTexture(int N) const;
+    GLuint generateH0Texture() const;
 
 public:
     WaterMeshChunk(int wh, float size, int xs, int ys);
@@ -63,13 +63,13 @@ public:
     void showDebugImage(const glm::mat4 &m_ortho, float time) const;
 
     void setWind(const glm::vec3 &dir, float speed);
+    void setAmplitude(float amp);
+    void update();
 
     int getWidth() const;
     int getHeight() const;
     float getSize() const;
     glm::vec3 getOffset() const;
-
-    void update();
 };
 
 #endif

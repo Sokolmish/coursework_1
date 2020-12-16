@@ -57,11 +57,12 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    cam.setPos(833, 138, 874);
+    cam.setPos(566, 270, 845);
     cam.setViewDeg(84, -23);
 
     WaterMeshChunk mesh(256, 5.f, 0, 0);
     mesh.setWind({ 1.f, 0.f, 0.f }, 80.f);
+    mesh.setAmplitude(400.f);
     mesh.update();
 
     DebugInformer debugger;
@@ -96,7 +97,7 @@ int main() {
         ratio = (float) width / (float) height;
 
         move(window, dt);
-        // if (!isFreeze)
+        if (!isFreeze)
             mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =

@@ -1,9 +1,8 @@
 #include "../include/waterMeshChunk.hpp"
 #include "../include/util/image.hpp"
-#include <cassert>
-#include <math.h>
-#include <iostream>
 #include "../include/util/utility.hpp"
+#include <cmath>
+#include <iostream>
 
 using namespace std::complex_literals;
 
@@ -27,7 +26,6 @@ std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
     }
     return tElements;
 }
-
 
 WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
     assert(wh > 0 && size > 1e-4f);
@@ -84,16 +82,14 @@ WaterMeshChunk::WaterMeshChunk(int wh, float size, int xs, int ys) {
 
     // Shaders loading
     showShader = Shader("./shaders/water.vert", "./shaders/water.frag");
-    physShader = Shader("./shaders/phys.comp");
     normShader = Shader("./shaders/norm.comp");
 
-    h0Shader =     Shader("./shaders/h0.comp");
     perlinShader = Shader("./shaders/perlin.comp");
 
     htShader =   Shader("./shaders/ht.comp");
     buttShader = Shader("./shaders/butt.comp");
     fourShader = Shader("./shaders/fourier.comp");
-    
+
     // Fourier buffer-textures allocation
     htHTex = generateEmptyTexture(width, height, GL_FLOAT);
     htxTex = generateEmptyTexture(width, height, GL_FLOAT);
@@ -155,31 +151,14 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 }
 
 void WaterMeshChunk::initTextures() {
-    GLuint xiTex = generateGaussTexture(width, height);
-
     buttTex = generateButterflyTexture(width);
-    h0Tex = generateEmptyTexture(width, height, GL_FLOAT);
+    h0Tex = generateH0Texture();
     perlinTex = generateEmptyTexture(512, 512, GL_FLOAT);
 
-    // Compute h0 map
-    h0Shader.use();
-    h0Shader.setUniform("L", width * size);
-    h0Shader.setUniform("N", width);
-    h0Shader.setUniform("Amp", 400.f); // TODO
-    h0Shader.setUniform("windDir", windDir);
-    h0Shader.setUniform("windSpeed", windSpeed);
-    glBindImageTexture(0, xiTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, h0Tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    glDispatchCompute(width, height, 1);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-    // Compute texture with perlin noise
     perlinShader.use();
     glBindImageTexture(0, perlinTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     glDispatchCompute(512, 512, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-    glDeleteTextures(1, &xiTex);
 }
 
 void WaterMeshChunk::computePhysics(float time) const {
@@ -194,9 +173,9 @@ void WaterMeshChunk::computePhysics(float time) const {
     glDispatchCompute(width, height, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-    ifft(htHTex, 1); // resHTex
-    ifft(htxTex, 0); // resXTex
-    ifft(htzTex, 2); // resZTex
+    ifft(htxTex, 0);
+    ifft(htHTex, 1);
+    ifft(htzTex, 2);
 
     normShader.use();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);
@@ -280,22 +259,6 @@ void WaterMeshChunk::showDebugImage(const glm::mat4 &m_ortho, float time) const 
 
 // Texture generators
 
-GLuint WaterMeshChunk::generateGaussTexture(int width, int height) const {
-    GLfloat *buff = new GLfloat[width * height * 4];
-    for (int j = 0; j < width * height * 4; j++)
-        buff[j] = dis(gen);
-    
-    GLuint id;    
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
-    configGlTexture(GL_CLAMP_TO_EDGE, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, buff);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    delete[] buff;
-    return id;
-}
-
 GLuint WaterMeshChunk::loadTextureFromFile(const std::string &path, GLenum wrap, GLenum filter) const {
     ImageRGB img = ImageRGB::fromFile(path);
     GLuint id;
@@ -352,7 +315,7 @@ GLuint WaterMeshChunk::generateButterflyTexture(int N) const {
             }
         }
     }
-    
+
     GLuint id;
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -364,7 +327,58 @@ GLuint WaterMeshChunk::generateButterflyTexture(int N) const {
     return id;
 }
 
-// Getters
+GLuint WaterMeshChunk::generateH0Texture() const {  
+    GLuint id;
+    GLfloat *buff = new GLfloat[width * height * 4];
+
+    float Lx = width * size;
+    float Lz = height * size;
+    float E = (windSpeed * windSpeed) / 9.81f;
+
+    for (int z = 0; z < height; z++) {
+        for (int x = 0; x < width; x++) {
+            glm::vec4 rnd = gaussRand({ dis(gen), dis(gen), dis(gen), dis(gen) });
+            float nx = x - width / 2.f;
+            float nz = z - height / 2.f;
+           
+            glm::vec2 k = glm::vec2(2.f * M_PI * nx / Lx, 2.f * M_PI * nz / Lz);
+            glm::vec2 nk = glm::normalize(k);
+            float mg = std::max(glm::length(k), 1e-4f);
+            float mg2 = mg * mg;
+
+            float h0 = std::min(4000.f, std::max(-4000.f,
+                sqrtf(amplitude / (mg2 * mg2)) *
+                powf(fabsf(nk.x * windDir.x + nk.y * windDir.z), 6.f) *
+                expf(-1.f / (mg2 * E * E)) * (float)M_SQRT1_2
+            ));
+
+            int base = ((z * width) + x) * 4;
+            buff[base + 0] = rnd[0] * h0;
+            buff[base + 1] = rnd[1] * h0;
+            buff[base + 2] = rnd[2] * h0;
+            buff[base + 3] = rnd[3] * h0 * -1.f; // conj
+        }
+    }
+
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    configGlTexture(GL_CLAMP_TO_EDGE, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, buff);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    delete[] buff;
+    return id;
+}
+
+// Getters and setters
+
+void WaterMeshChunk::setAmplitude(float amp) {
+    this->amplitude = amp;
+}
+
+void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
+    this->windDir = glm::normalize(dir);
+    this->windSpeed = speed;
+}
 
 int WaterMeshChunk::getWidth() const {
     return this->width;
@@ -380,9 +394,4 @@ float WaterMeshChunk::getSize() const {
 
 glm::vec3 WaterMeshChunk::getOffset() const {
     return offset;
-}
-
-void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
-    windDir = glm::normalize(dir);
-    windSpeed = speed;
 }

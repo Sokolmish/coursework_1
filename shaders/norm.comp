@@ -1,11 +1,11 @@
 #version 430 core
 
+layout (local_size_x = 1, local_size_y = 1) in;
+
 layout(binding = 0, std430) readonly buffer data0 {
     float heightMap[];
 };
 layout (binding = 1, rgba32f) uniform writeonly image2D normalMap;
-
-layout (local_size_x = 1, local_size_y = 1) in;
 
 vec3 getPoint(ivec2 pos) {
     uint px = clamp(pos.x, 0, gl_NumWorkGroups.x - 1);
@@ -29,5 +29,5 @@ void main() {
         cross(posy, posx) +
         cross(posx, negy)
     );
-    imageStore(normalMap, storePos, vec4(res, 1));
+    imageStore(normalMap, storePos, vec4(res, 1.0));
 }

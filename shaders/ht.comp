@@ -7,7 +7,7 @@
 layout (local_size_x = 1, local_size_y = 1) in;
 
 layout (binding = 0, rgba32f) uniform readonly image2D h0Map;
-layout (binding = 1, rgba32f) uniform writeonly image2D htHeigh;
+layout (binding = 1, rgba32f) uniform writeonly image2D htH;
 layout (binding = 2, rgba32f) uniform writeonly image2D htx;
 layout (binding = 3, rgba32f) uniform writeonly image2D htz;
 
@@ -18,42 +18,31 @@ uniform float time;
 struct compl {
     float Re, Im;
 };
+compl vcompl(vec2 v) {
+    return compl(v.x, v.y);
+}
 compl mul(compl lhs, compl rhs) {
     return compl(lhs.Re * rhs.Re - lhs.Im * rhs.Im, lhs.Re * rhs.Im + lhs.Im * rhs.Re);
 }
 compl add(compl lhs, compl rhs) {
     return compl(lhs.Re + rhs.Re, lhs.Im + rhs.Im);
 }
-compl conj(compl x) {
-    return compl(x.Re, -x.Im);
-}
 
 void main() {
-    vec2 x = ivec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
-    vec2 k = vec2(2.0 * M_PI * x.x / L, 2.0 * M_PI * x.y / L);
-    float mag = length(k);
-    if (mag < 0.00001)
-        mag = 0.00001;
-    
-    float w = sqrt(9.81 * mag);
-
+    vec2 pos = ivec2(gl_GlobalInvocationID.xy) - float(N) / 2.0;
     vec4 h0 = imageLoad(h0Map, ivec2(gl_GlobalInvocationID.xy));
-    compl fc1 = compl(h0.x, h0.y);
-    compl fc2 = conj(compl(h0.z, h0.w));
+    vec2 k = vec2(2.0 * M_PI * pos.x / L, 2.0 * M_PI * pos.y / L);
 
+    float mg = max(1e-5, length(k));
+    float w = sqrt(9.81 * mg);
     float coswt = cos(w * time);
     float sinwt = sin(w * time);
 
-    compl expPos = compl(coswt, sinwt);
-    compl expInv = compl(coswt, -sinwt);
+    compl dy = add(mul(vcompl(h0.xy), compl(coswt, sinwt)), mul(vcompl(h0.zw), compl(coswt, -sinwt)));
+    compl dx = mul(compl(0.0, -k.x / mg), dy);
+    compl dz = mul(compl(0.0, -k.y / mg), dy);
 
-    compl dy = add(mul(fc1, expPos), mul(fc2, expInv));
-    compl tdx = compl(0.0, -k.x / mag);
-    compl tdz = compl(0.0, -k.y / mag);
-    compl dx = mul(tdx, dy);
-    compl dz = mul(tdz, dy);
-
-    imageStore(htHeigh, ivec2(gl_GlobalInvocationID.xy), vec4(dy.Re, dy.Im, 0, 1));
-    imageStore(htx, ivec2(gl_GlobalInvocationID.xy), vec4(dx.Re, dx.Im, 0, 1));
-    imageStore(htz, ivec2(gl_GlobalInvocationID.xy), vec4(dz.Re, dz.Im, 0, 1));
+    imageStore(htH, ivec2(gl_GlobalInvocationID.xy), vec4(dy.Re, dy.Im, 0.0, 1.0));
+    imageStore(htx, ivec2(gl_GlobalInvocationID.xy), vec4(dx.Re, dx.Im, 0.0, 1.0));
+    imageStore(htz, ivec2(gl_GlobalInvocationID.xy), vec4(dz.Re, dz.Im, 0.0, 1.0));
 }
