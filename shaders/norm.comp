@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (local_size_x = 1, local_size_y = 1) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, std430) readonly buffer data0 {
     float heightMap[];
@@ -8,9 +8,10 @@ layout(binding = 0, std430) readonly buffer data0 {
 layout (binding = 1, rgba32f) uniform writeonly image2D normalMap;
 
 vec3 getPoint(ivec2 pos) {
-    uint px = clamp(pos.x, 0, gl_NumWorkGroups.x - 1);
-    uint py = clamp(pos.y, 0, gl_NumWorkGroups.y - 1);
-    uint base = (py * gl_NumWorkGroups.x + px) * 3;
+    uvec2 sz = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
+    uint px = clamp(pos.x, 0, sz.x - 1);
+    uint py = clamp(pos.y, 0, sz.y - 1);
+    uint base = (py * sz.x + px) * 3;
     return vec3(heightMap[base + 0], heightMap[base + 1], heightMap[base + 2]);
 }
 

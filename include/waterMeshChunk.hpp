@@ -28,6 +28,12 @@ private:
     glm::vec3 windDir;
     float windSpeed;
     float amplitude;
+    
+    glm::vec3 sunDir;
+    glm::vec3 globalAmb;
+    glm::vec3 ambient, diffuse, specular;
+    float specExpoenent;
+
 
     typedef std::normal_distribution<float> rand_distrib; // uniform_real_distribution<float>
     mutable std::mt19937 gen; // Standard mersenne twister engine
@@ -64,6 +70,13 @@ public:
 
     void setWind(const glm::vec3 &dir, float speed);
     void setAmplitude(float amp);
+    void setSun(const glm::vec3 &dir);
+    void setGlobalAmbient(const glm::vec3 &color);
+
+    void setDiffuse(const glm::vec3 &color);
+    void setAmbient(const glm::vec3 &color);
+    void setSpecular(const glm::vec3 &color, float exp);
+
     void update();
 
     int getWidth() const;

@@ -60,14 +60,19 @@ int main() {
     cam.setPos(566, 270, 845);
     cam.setViewDeg(84, -23);
 
-    WaterMeshChunk mesh(256, 5.f, 0, 0);
+    WaterMeshChunk mesh(512, 5.f, 0, 0);
     mesh.setWind({ 1.f, 0.f, 0.f }, 80.f);
-    mesh.setAmplitude(400.f);
+    mesh.setAmplitude(700.f);
+    mesh.setSun(glm::vec3(0.5f, 0.5f, 0.0f));
+    mesh.setGlobalAmbient(glm::vec3(0.35f, 0.35f, 0.45f));
+    mesh.setDiffuse(glm::vec3(0.03f, 0.391f, 0.9993f) * 0.4f); // (0.03f, 0.391f, 0.9993f)
+    mesh.setAmbient(glm::vec3(0.03f, 0.391f, 0.9993f) * 0.35f);
+    mesh.setSpecular(glm::vec3(0.16f, 0.16f, 0.16f), 100.f);
     mesh.update();
 
     DebugInformer debugger;
 
-    glClearColor(0.1f, 0.6f, 0.8f, 1.f); // 0.539f, 0.788f, 0.89f
+    glClearColor(0.1f, 0.55f, 0.75f, 1.f); //0.69f, 0.84f, 1.00f //  0.539f, 0.788f, 0.89f
     if constexpr (disableVsync)
         glfwSwapInterval(0);
 
@@ -101,7 +106,7 @@ int main() {
             mesh.computePhysics(timePhys);
 
         glm::mat4 m_proj_view =
-            glm::perspective(45.f, ratio, 0.1f, 500.f) *
+            glm::perspective(45.f, ratio, 0.1f, 2500.f) *
             glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
             glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
             glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *
