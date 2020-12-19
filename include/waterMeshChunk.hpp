@@ -8,6 +8,7 @@
 
 #include "util/shader.hpp"
 #include "util/camera.hpp"
+#include "envSky.hpp"
 
 #include <vector>
 #include <initializer_list>
@@ -29,12 +30,13 @@ private:
     float windSpeed;
     float amplitude;
 
-    glm::vec3 sunDir;
     glm::vec3 skyColor;
     glm::vec3 globalAmb;
     glm::vec3 ambient, diffuse, specular;
     float specExpoenent;
     glm::vec3 baseDim, baseBright;
+
+    EnvSky envSky;
 
     typedef std::normal_distribution<float> rand_distrib; // uniform_real_distribution<float>
     mutable std::mt19937 gen; // Standard mersenne twister engine
@@ -69,18 +71,21 @@ public:
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;
     void showDebugImage(const glm::mat4 &m_ortho, float time) const;
 
+
     void setWind(const glm::vec3 &dir, float speed);
     void setAmplitude(float amp);
-    void setSun(const glm::vec3 &dir);
+
+    void setSky(const EnvSky &sky);
     void setGlobalAmbient(const glm::vec3 &color);
     void setSkyColor(const glm::vec3 &color);
-    void setBaseColor(const glm::vec3 &dim, const glm::vec3 &bright);
 
+    void setBaseColor(const glm::vec3 &dim, const glm::vec3 &bright);
     void setDiffuse(const glm::vec3 &color);
     void setAmbient(const glm::vec3 &color);
     void setSpecular(const glm::vec3 &color, float exp);
 
     void update();
+
 
     int getWidth() const;
     int getHeight() const;

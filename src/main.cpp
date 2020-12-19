@@ -7,6 +7,7 @@
 
 #include "../include/debugInformer.hpp"
 #include "../include/waterMeshChunk.hpp"
+#include "../include/envSky.hpp"
 
 #include <iostream>
 #include <string>
@@ -62,16 +63,19 @@ int main() {
 
     glm::vec3 skyCol = glm::vec3(135, 206, 235) / 255.f * 0.8f;
 
+    EnvSky sky("", glm::vec3(0.5f, 0.5f, 0.0f), 10000.f, 500.f);
+    sky.setSunCol(glm::vec3(255.f, 255.f, 59.f) / 255.f);
+
     WaterMeshChunk mesh(512, 7.5f, 0, 0);
     mesh.setWind({ 1.f, 0.f, 0.2f }, 180.f);
     mesh.setAmplitude(700.f);
-    mesh.setSun(glm::vec3(0.5f, 0.5f, 0.0f));
     mesh.setGlobalAmbient(glm::vec3(0.35f, 0.35f, 0.45f));
     mesh.setDiffuse(glm::vec3(0.03f, 0.04f, 0.05f));
     mesh.setAmbient(glm::vec3(0.02f, 0.07f, 0.10f));
     mesh.setSpecular(glm::vec3(0.13f, 0.25f, 0.40f), 290.f);
     mesh.setBaseColor(glm::vec3(0.02f, 0.03f, 0.04f), glm::vec3(0.99f, 0.79f, 0.65f));
 
+    mesh.setSky(sky);
     mesh.setSkyColor(skyCol);
     mesh.update();
 
@@ -118,10 +122,19 @@ int main() {
             glm::rotate(glm::mat4(1.f), cam.pitch, glm::vec3(-1, 0, 0)) *
             glm::rotate(glm::mat4(1.f), cam.yaw, glm::vec3(0, 1, 0)) *
             glm::translate(glm::mat4(1.f), -cam.pos);
+        glm::mat4 m_sun =
+            glm::perspective(45.f, ratio, 100.f, 100000.f) *
+            glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
+            glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
+            glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *
+            glm::rotate(glm::mat4(1.f), cam.pitch, glm::vec3(-1, 0, 0)) *
+            glm::rotate(glm::mat4(1.f), cam.yaw, glm::vec3(0, 1, 0));
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
-        // mesh.showDebugImage(m_ortho, timePhys);
+        sky.show(m_sun);
         mesh.show(m_proj_view, isMesh, cam);
+        
+        // mesh.showDebugImage(m_ortho, timePhys);
 
         debugger.setPos(cam.pos);
         debugger.setView(cam.yaw, cam.pitch);

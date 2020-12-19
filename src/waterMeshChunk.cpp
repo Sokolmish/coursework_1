@@ -119,7 +119,10 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
 
     showShader.setUniform("globalAmb", globalAmb);
     showShader.setUniform("skyColor", skyColor);
-    showShader.setUniform("sunDir", sunDir);
+
+    showShader.setUniform("sunDir", envSky.getSunDir());
+    showShader.setUniform("sunAngle", envSky.getSunAngle());
+    showShader.setUniform("sunColor", envSky.getSunColor());
 
     showShader.setUniform("baseDim", baseDim);
     showShader.setUniform("baseBright", baseBright);
@@ -394,8 +397,8 @@ void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
     this->windSpeed = speed;
 }
 
-void WaterMeshChunk::setSun(const glm::vec3 &dir) {
-    this->sunDir = glm::normalize(dir);
+void WaterMeshChunk::setSky(const EnvSky &sky) {
+    this->envSky = sky;
 }
 
 void WaterMeshChunk::setGlobalAmbient(const glm::vec3 &color) {

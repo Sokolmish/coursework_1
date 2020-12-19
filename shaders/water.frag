@@ -15,9 +15,13 @@ uniform bool is_mesh;
 uniform vec3 mesh_color;
 
 uniform vec3 eye_pos;
-uniform vec3 sunDir;
 uniform vec3 globalAmb;
+
 uniform vec3 skyColor;
+
+uniform vec3 sunDir;
+uniform float sunAngle;
+uniform vec3 sunColor;
 
 uniform vec3 baseDim;
 uniform vec3 baseBright;
@@ -41,6 +45,7 @@ void main() {
         vec3 normal = normalize(texture(normalMap, texc).xyz);
         vec3 viewDir = normalize(eye_pos - vpos);
         vec3 halfway = normalize(sunDir + viewDir);
+        vec3 reflDir = normalize(reflect(viewDir, normal));
 
         float cost1 = dot(viewDir, normal);
         float sint2 = 0.75 * sqrt(1.0 - cost1 * cost1);
@@ -48,7 +53,7 @@ void main() {
         float fresnel = (cost1 - 1.35 * cost2) / (cost1 + 1.35 * cost2);
         fresnel = fresnel * fresnel;
 
-        float ambient = max(0.0, dot(reflect(viewDir, normal), viewDir));
+        float ambient = max(0.0, dot(reflDir, viewDir));
         float diffuse = -min(0.0, dot(normal, sunDir));
         float specular = pow(max(0.0, dot(normal, halfway)), mat.exponent);
 
@@ -61,7 +66,13 @@ void main() {
                 diffuse * fresnel * mat.diffuse +
                 specular * fresnel * mat.specular;
 
+        // float sunOff = acos(dot(reflDir, -sunDir));
+        // if (sunOff <= sunAngle)
+        //     res += sunColor;
+        // else
+        //     res += skyColor;
         res += skyColor;
+
         if(res.b < 0.9)
             res *= fresnel;
 
