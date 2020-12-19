@@ -19,7 +19,7 @@
 
 // Config
 
-static constexpr float coeffMovement = 49.0f;
+static constexpr float coeffMovement = 79.0f;
 static constexpr float coeffCameraKeyboard = 1.4f;
 static constexpr float coeffCameraMouse = 0.6f;
 
@@ -57,22 +57,27 @@ int main() {
     glfwGetWindowSize(window, &width, &height);
     float ratio = (float) width / (float) height;
 
-    cam.setPos(566, 270, 845);
+    cam.setPos(1191, 306, 1767);
     cam.setViewDeg(84, -23);
 
-    WaterMeshChunk mesh(512, 5.f, 0, 0);
-    mesh.setWind({ 1.f, 0.f, 0.f }, 80.f);
+    glm::vec3 skyCol = glm::vec3(135, 206, 235) / 255.f * 0.8f;
+
+    WaterMeshChunk mesh(512, 7.5f, 0, 0);
+    mesh.setWind({ 1.f, 0.f, 0.2f }, 180.f);
     mesh.setAmplitude(700.f);
     mesh.setSun(glm::vec3(0.5f, 0.5f, 0.0f));
     mesh.setGlobalAmbient(glm::vec3(0.35f, 0.35f, 0.45f));
-    mesh.setDiffuse(glm::vec3(0.03f, 0.391f, 0.9993f) * 0.4f); // (0.03f, 0.391f, 0.9993f)
-    mesh.setAmbient(glm::vec3(0.03f, 0.391f, 0.9993f) * 0.35f);
-    mesh.setSpecular(glm::vec3(0.16f, 0.16f, 0.16f), 100.f);
+    mesh.setDiffuse(glm::vec3(0.03f, 0.04f, 0.05f));
+    mesh.setAmbient(glm::vec3(0.02f, 0.07f, 0.10f));
+    mesh.setSpecular(glm::vec3(0.13f, 0.25f, 0.40f), 290.f);
+    mesh.setBaseColor(glm::vec3(0.02f, 0.03f, 0.04f), glm::vec3(0.99f, 0.79f, 0.65f));
+
+    mesh.setSkyColor(skyCol);
     mesh.update();
 
     DebugInformer debugger;
 
-    glClearColor(0.1f, 0.55f, 0.75f, 1.f); //0.69f, 0.84f, 1.00f //  0.539f, 0.788f, 0.89f
+    glClearColor(skyCol.r, skyCol.g, skyCol.b, 1.f);
     if constexpr (disableVsync)
         glfwSwapInterval(0);
 

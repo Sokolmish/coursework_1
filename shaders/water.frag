@@ -16,9 +16,13 @@ uniform vec3 mesh_color;
 
 uniform vec3 eye_pos;
 uniform vec3 sunDir;
+uniform vec3 globalAmb;
+uniform vec3 skyColor;
+
+uniform vec3 baseDim;
+uniform vec3 baseBright;
 
 uniform Material mat;
-uniform vec3 globalAmb;
 
 uniform sampler2D normalMap;
 uniform sampler2D perlinNoise;
@@ -30,54 +34,37 @@ out vec4 color;
 
 void main() {
     if (is_mesh) {
-        color = vec4(mesh_color, 1);
+        color = vec4(mesh_color, 1.0);
     }
     else {
-        vec3 normal = texture(normalMap, texc).xyz;
-        vec3 lDir = normalize(sunDir);
-        float lIntensivity = max(0, dot(lDir, normal));
-         
-        vec3 bNoise = vec3(0, 0, texture(perlinNoise, texc) - 0.3);
+        const float brightTreshold = 0.99;
+        vec3 normal = normalize(texture(normalMap, texc).xyz);
+        vec3 viewDir = normalize(eye_pos - vpos);
+        vec3 halfway = normalize(sunDir + viewDir);
 
-        // Ambient
-        vec3 ambient = globalAmb * (mat.ambient);
-        // Diffuse
-        float diff = max(dot(normal, lDir), 0);
-        vec3 diffuse = lIntensivity * (diff * (mat.diffuse + bNoise * 0.3)); // * spotlight.col
-        // Specular
-        vec3 halfway = normalize(lDir + normalize(eye_pos - vpos));
-        float spec = pow(max(dot(normal, halfway), 0), mat.exponent);
-        vec3 specular = lIntensivity * (spec * mat.specular); //  * spotlight.col
+        float cost1 = dot(viewDir, normal);
+        float sint2 = 0.75 * sqrt(1.0 - cost1 * cost1);
+        float cost2 = 1.5 * sqrt(1 - sint2 * sint2);
+        float fresnel = (cost1 - 1.35 * cost2) / (cost1 + 1.35 * cost2);
+        fresnel = fresnel * fresnel;
 
-        color = vec4(ambient + diffuse + specular, 1.0);
+        float ambient = max(0.0, dot(reflect(viewDir, normal), viewDir));
+        float diffuse = -min(0.0, dot(normal, sunDir));
+        float specular = pow(max(0.0, dot(normal, halfway)), mat.exponent);
 
-        // vec3 upwelling = vec3(0, 0.2, 0.3); // vec3(0.03f, 0.391f, 0.9993f) * 0.35f
-        // vec3 sky       = vec3(0.1f, 0.55f, 0.75f);
-        // // vec3 air       = vec3(0.69f, 0.84f, 1.00f);
-        // float nSnell    = 1.34;
-        // float Kdiffuse  = 0.91;
+        vec3 res;
+        if (specular >= brightTreshold)
+            res = baseBright;
+        else
+            res = baseDim +
+                ambient * mat.ambient +
+                diffuse * fresnel * mat.diffuse +
+                specular * fresnel * mat.specular;
 
-        // float reflectivity;
-        // vec3 nI = normalize(-sunDir);
-        // vec3 nN = normalize(normal);
-        // float costhetai = abs(dot(nI, nN));
-        // float thetai = acos(costhetai);
-        // float sinthetat = sin(thetai) / nSnell;
-        // float thetat = asin(sinthetat);
-        // if (thetai == 0.0) {
-        //     reflectivity = (nSnell - 1) / (nSnell + 1);
-        //     reflectivity = reflectivity * reflectivity;
-        // }
-        // else {
-        //     float fs = sin(thetat - thetai) / sin(thetat + thetai);
-        //     float ts = tan(thetat - thetai) / tan(thetat + thetai);
-        //     reflectivity = 0.5 * (fs * fs + ts * ts);
-        // }
-        // // vec3 dPE = (vpos - eye_pos) / 2000.0;
-        // // float dist = length(dPE) * Kdiffuse;
-        // // dist = exp(-dist);
-        // vec3 Ci = 1.0 * (reflectivity * sky + (1 - reflectivity) * upwelling) ;//+  (1 - dist) * air;
+        res += skyColor;
+        if(res.b < 0.9)
+            res *= fresnel;
 
-        // color = vec4(Ci, 1.0);
+        color = vec4(res, 1.0);
     }
 }

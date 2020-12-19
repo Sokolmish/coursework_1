@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-#define WG_SIZE 16
+#define WG_SIZE 8
 
 using namespace std::complex_literals;
 
@@ -20,8 +20,8 @@ inline void push_tr(std::vector<T> &dst, T p1, T p2, T p3) {
 
 std::vector<std::pair<int, int> > WaterMeshChunk::getElements() const {
     std::vector<std::pair<int, int> > tElements;
-    for (int zz = 0; zz < height - 1; zz++) {
-        for (int xx = 0; xx < width - 1; xx++) {
+    for (int zz = 4; zz < height - 5; zz++) {
+        for (int xx = 4; xx < width - 5; xx++) {
             push_tr(tElements, { xx, zz }, { xx + 1, zz }, { xx + 1, zz + 1 });
             push_tr(tElements, { xx, zz }, { xx + 1, zz + 1 }, { xx, zz + 1 });
         }
@@ -117,7 +117,10 @@ void WaterMeshChunk::show(const glm::mat4 &m_proj_view, bool isMesh, const Camer
     showShader.setUniform("eye_pos", cam.pos);
 
     showShader.setUniform("globalAmb", globalAmb);
+    showShader.setUniform("skyColor", skyColor);
     showShader.setUniform("sunDir", sunDir);
+    showShader.setUniform("baseDim", baseDim);
+    showShader.setUniform("baseBright", baseBright);
 
     showShader.setUniform("mat.ambient", ambient); 
     showShader.setUniform("mat.diffuse", diffuse);
@@ -394,7 +397,7 @@ void WaterMeshChunk::setWind(const glm::vec3 &dir, float speed) {
 }
 
 void WaterMeshChunk::setSun(const glm::vec3 &dir) {
-    this->sunDir = dir;
+    this->sunDir = glm::normalize(dir);
 }
 
 void WaterMeshChunk::setGlobalAmbient(const glm::vec3 &color) {
@@ -414,6 +417,14 @@ void WaterMeshChunk::setSpecular(const glm::vec3 &color, float exp) {
     this->specExpoenent = exp;
 }
 
+void WaterMeshChunk::setSkyColor(const glm::vec3 &color) {
+    this->skyColor = color;
+}
+
+void WaterMeshChunk::setBaseColor(const glm::vec3 &dim, const glm::vec3 &bright) {
+    this->baseDim = dim;
+    this->baseBright = bright;
+}
 
 
 int WaterMeshChunk::getWidth() const {

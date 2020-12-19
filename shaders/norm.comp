@@ -1,6 +1,8 @@
 #version 430 core
 
-layout (local_size_x = 16, local_size_y = 16) in;
+#define WG_SIZE 8
+
+layout (local_size_x = WG_SIZE, local_size_y = WG_SIZE) in;
 
 layout(binding = 0, std430) readonly buffer data0 {
     float heightMap[];
