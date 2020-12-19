@@ -2,8 +2,7 @@
 
 uniform mat4 m_proj_view;
 
-uniform float gWidth;
-uniform float gHeight;
+uniform float gNodes;
 
 layout (location = 0) in vec3 pos;
 
@@ -13,5 +12,5 @@ out vec2 texc;
 void main() {
     gl_Position = m_proj_view * vec4(pos, 1.0);
     vpos = pos;
-    texc = vec2(pos.x / gWidth, pos.z / gHeight);
+    texc = vec2(pos.x / gNodes, pos.z / gNodes);
 }

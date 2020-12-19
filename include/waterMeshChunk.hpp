@@ -16,7 +16,7 @@
 
 class WaterMeshChunk {
 private:
-    int width, height;
+    int nodes;
     float size;
     glm::vec3 offset;
 
@@ -28,7 +28,7 @@ private:
     glm::vec3 windDir;
     float windSpeed;
     float amplitude;
-    
+
     glm::vec3 sunDir;
     glm::vec3 skyColor;
     glm::vec3 globalAmb;
@@ -43,7 +43,7 @@ private:
     Shader showShader;
     Shader normShader;
 
-    int logN;
+    int fourierStages;
     Shader htShader, buttShader, fourShader, perlinShader;
     GLuint h0Tex, buttTex, perlinTex;
     GLuint htHTex, htxTex, htzTex, ppTex;
@@ -63,7 +63,7 @@ private:
     GLuint generateH0Texture() const;
 
 public:
-    WaterMeshChunk(int wh, float size, int xs, int ys);
+    WaterMeshChunk(int dens, float size, int xs, int ys);
 
     void computePhysics(float absTime) const;
     void show(const glm::mat4 &m_proj_view, bool isMesh, const Camera &cam) const;

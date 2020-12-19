@@ -6,10 +6,12 @@ This is the coursework for course "Algorithms of computer graphics".
 
 ### Keymap
 
-| key   | action                             |
-|-------|------------------------------------|
-| `Esc` | Open menu                          |
-| `p`   | Hide/show cursor                   |
-| `q`   | Change display mode: mesh/polygons |
-| `z`   | Freeze geometry                    |
-| `i`   | Take screenshot                    |
+| key      | action                             |
+|----------|------------------------------------|
+| `WASD`   | Moving                             |
+| `Space`  | Move up                            |
+| `LShift` | Move down                          |
+| `p`      | Hide/show cursor                   |
+| `q`      | Change display mode: mesh/polygons |
+| `z`      | Freeze geometry                    |
+| `i`      | Take screenshot                    |
