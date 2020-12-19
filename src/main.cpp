@@ -114,21 +114,19 @@ int main() {
         if (!isFreeze)
             mesh.computePhysics(timePhys);
 
-        glm::mat4 m_proj_view =
-            glm::perspective(45.f, ratio, 0.1f, 2500.f) *
-            glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
-            glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
-            glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *
-            glm::rotate(glm::mat4(1.f), cam.pitch, glm::vec3(-1, 0, 0)) *
-            glm::rotate(glm::mat4(1.f), cam.yaw, glm::vec3(0, 1, 0)) *
-            glm::translate(glm::mat4(1.f), -cam.pos);
-        glm::mat4 m_sun =
-            glm::perspective(45.f, ratio, 100.f, 100000.f) *
+        glm::mat4 m_view1 =
             glm::scale(glm::mat4(1.f), glm::vec3(0.3, 0.3, 0.3)) *
             glm::scale(glm::mat4(1.f), glm::vec3(cam.zoom, cam.zoom, 1.f)) *
             glm::rotate(glm::mat4(1.f), cam.roll, glm::vec3(0, 0, -1)) *
             glm::rotate(glm::mat4(1.f), cam.pitch, glm::vec3(-1, 0, 0)) *
             glm::rotate(glm::mat4(1.f), cam.yaw, glm::vec3(0, 1, 0));
+        glm::mat4 m_proj_view =
+            glm::perspective(45.f, ratio, 0.1f, 2500.f) *
+            m_view1 *
+            glm::translate(glm::mat4(1.f), -cam.pos);
+        glm::mat4 m_sun =
+            glm::perspective(45.f, ratio, 100.f, 100000.f) *
+            m_view1;
         glm::mat4 m_ortho = glm::ortho(0.0f, (float) width, 0.0f, (float) height);
 
         sky.show(m_sun);

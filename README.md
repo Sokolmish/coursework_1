@@ -15,3 +15,9 @@ This is the coursework for course "Algorithms of computer graphics".
 | `q`      | Change display mode: mesh/polygons |
 | `z`      | Freeze geometry                    |
 | `i`      | Take screenshot                    |
+
+## Screenshots
+
+<img src="./docs/final.png">
+
+<img src="./docs/big.png">
