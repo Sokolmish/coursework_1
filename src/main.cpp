@@ -70,8 +70,8 @@ int main() {
     mesh.setWind({ 1.f, 0.f, 0.2f }, 180.f);
     mesh.setAmplitude(700.f);
     mesh.setGlobalAmbient(glm::vec3(0.35f, 0.35f, 0.45f));
-    mesh.setDiffuse(glm::vec3(0.03f, 0.04f, 0.05f));
     mesh.setAmbient(glm::vec3(0.02f, 0.07f, 0.10f));
+    mesh.setDiffuse(glm::vec3(0.03f, 0.04f, 0.05f));
     mesh.setSpecular(glm::vec3(0.13f, 0.25f, 0.40f), 290.f);
     mesh.setBaseColor(glm::vec3(0.02f, 0.03f, 0.04f), glm::vec3(0.99f, 0.79f, 0.65f));
 
